@@ -6,20 +6,20 @@
 
 - Core architecture decisions locked
 - Four Office roles described (Architect, Staff Engineer, Scrum Master, Super DevOps)
-- Architect explicitly owns continuous improvement of the factory foundation
-- Staff Engineer added as hands-on technical partner of the Architect
-- Handoff protocol sketched
-- Observability contract for CLI event log defined
-- Team onboarding process documented
-- Repository created and populated with foundation docs
+- Architect owns continuous improvement of the factory foundation
+- Staff Engineer is the hands-on technical partner of the Architect
+- Handoff protocol, observability contract, team onboarding documented
+- OpenSpec capability specs for: agent-roles, team-onboarding, foundation-evolution, message-bus, environments, handoff, observability
+- Draft SOUL.md for all four Office agents
+- Repository foundation docs in place
 
 ## Next recommended steps
 
-1. Flesh out OpenSpec capability specs (`agent-roles`, `message-bus`, `environments`, `handoff`, `observability`, `team-onboarding`, `foundation-evolution`)
-2. Draft SOUL.md for all four Office agents
-3. Define the concrete message schema under `bus/`
-4. Decide how existing lab-crew / dev-crew instances will connect to the shared bus (migration notes)
-5. Minimal runnable skeleton (Office agents + shared Redis + CLI log)
+1. Define concrete message schema under `bus/` (action-schema style)
+2. Migration notes: how lab-crew / dev-crew drop local Redis and connect to Office bus
+3. Minimal runnable skeleton (Office agents + shared Redis + CLI log + doors)
+4. Refine SOULs and add first skills after skeleton exists
+5. Resolve open questions on pre-prod locking and Lab environments
 
 ## Open questions still pending
 

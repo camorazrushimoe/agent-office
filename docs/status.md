@@ -2,26 +2,29 @@
 
 **Date:** 2026-08-22
 
-## Done
+## Done (specification)
 
-- Core architecture decisions locked
-- Four Office roles + SOUL drafts
-- Handoff, observability, onboarding, agent lifecycle documented
-- OpenSpec core capabilities including **composition** and **agent-lifecycle**
-- Shared bus envelope `bus/action-schema.json`
-- Migration notes for lab/dev → Office bus + lifecycle
-- **Multi-repo composition model** (`docs/composition.md`): Office shell + instantiable team templates
-- Template-contract PRs opened against `dev-crew` and `lab-crew`
+- Architecture, roles, SOULs, handoff, observability, lifecycle, composition
+- Multi-repo model (Office shell + team templates)
+- Bus envelope, migration notes, onboarding
+- **Deploy guide** (`docs/deploy.md`)
+- **Team registry schema** (`docs/team-registry.md`)
+- **Pre-prod lock protocol** (`docs/preprod.md`) — global lock v1
+- **MVP scope** (`docs/mvp-scope.md`) — closed open questions
+- Example config: composition, registry, agents doors, `.env.example`
 
-## Next recommended steps
+## Closed decisions
 
-1. Merge template-contract docs in team repos; implement Office-attach code incrementally
-2. Minimal runnable skeleton (Office agents + shared Redis + lifecycle pattern + CLI log)
-3. Composition CLI / spawn script (optional after skeleton)
-4. Pre-prod locking protocol when multiple Dev instances promote
+- Office agents: **always-on in v1**
+- Lab: **no private cluster by default**
+- Pre-prod: **single global promotion lock**
+- First deploy: **Office phase A**, then attach teams
 
-## Open questions still pending
+## Remaining to actually run (implementation)
 
-- Exact locking / ownership protocol for shared pre-prod when multiple teams promote
-- Whether Lab teams ever need a private cluster of their own
-- Whether Office agents themselves use idle/wake in v1 or stay always-on while few
+1. `docker-compose.yml` + agent images for Office shell
+2. `crew-send` + `office-log` scripts
+3. Hermes `config.yaml` per Office agent
+4. Merge template-contract PRs and implement Office-attach in `dev-crew` / `lab-crew`
+
+Spec for starting implementation/deploy of the **shell** is complete.

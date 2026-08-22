@@ -1,0 +1,12 @@
+# Agent Office — OpenSpec configuration
+
+context: |
+  Agent Office is a meta-factory that orchestrates Lab Crew and Dev Crew instances.
+  It owns the shared Redis bus, the shared pre-prod cluster, and three permanent
+  agents (Architect, Scrum Master, Super DevOps).
+
+rules:
+  - No silent work: significant actions must leave observable traces.
+  - Teams stay specialized: Lab does research, Dev builds, Office routes and observes.
+  - Single bus: one Redis at Office level for all communication.
+  - Private sandbox, shared gate: each Dev team has its own dev-cluster; pre-prod is shared.

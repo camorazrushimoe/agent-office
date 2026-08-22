@@ -26,6 +26,7 @@ You (via external Hermes agent)
         ├── Lab Crew #1          (research & experimentation)
         ├── Dev Crew #1          (implementation)
         └── Dev Crew #2          (implementation)
+              agents sleep when idle · wake on demand
 ```
 
 - **Lab Crew** answers: *Is this idea real? What should we measure?*
@@ -42,6 +43,7 @@ You (via external Hermes agent)
 | Private environments | Each team owns its own **dev-cluster** |
 | Shared environments | One **pre-prod** cluster at Office level |
 | Message bus | **Single Redis bus** at Office level (intra-team + inter-team) |
+| Agent containers | **Idle stop (~40m) + wake-on-demand** via lifecycle controller |
 | Teams in v1 | 1 Lab + 2 Dev |
 | Office agents | Architect, Staff Engineer, Scrum Master, Super DevOps |
 | Primary human entry | Through Scrum Master (but any-to-any is allowed) |
@@ -94,14 +96,17 @@ Teams remain separate repositories. Agent Office knows how to talk to them, how 
 | [docs/handoff-protocol.md](docs/handoff-protocol.md) | How work moves between Office ↔ Lab ↔ Dev |
 | [docs/observability.md](docs/observability.md) | CLI event log contract |
 | [docs/onboarding-team.md](docs/onboarding-team.md) | How to create / connect a new team |
-| `openspec/` | Capability specs (to be filled) |
+| [docs/agent-lifecycle.md](docs/agent-lifecycle.md) | Idle stop + wake-on-demand for agent containers |
+| [docs/migration-teams-to-office-bus.md](docs/migration-teams-to-office-bus.md) | Connect lab/dev crews to Office bus + lifecycle |
+| `bus/action-schema.json` | Shared bus envelope |
+| `openspec/` | Capability specs |
 
 ---
 
 ## Status
 
-v0.2 — four Office roles, onboarding process, and foundation-evolution responsibility added.  
-Next: OpenSpec capability specs, SOUL drafts, message schemas, minimal runnable skeleton.
+v0.3 — OpenSpec core, SOUL drafts, bus schema, team migration notes, **agent lifecycle (idle stop + wake)**.  
+Next: minimal runnable skeleton (Office agents + shared Redis + lifecycle + CLI log).
 
 ---
 

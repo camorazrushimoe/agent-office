@@ -25,6 +25,9 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 7. **Foundation is also a product**  
    Improving Agent Office and the crew factories themselves is first-class work, led by Architect + Staff Engineer.
 
+8. **Agents sleep when idle; wake is part of send**  
+   Agent containers that have no work for the configured idle period are stopped. Delivering a message to an agent MUST wake it if needed, wait until healthy, then deliver. Work must not be silently lost because the target was stopped. See `docs/agent-lifecycle.md`.
+
 ## What Office is responsible for
 
 - Portfolio of projects and their current stage
@@ -35,6 +38,7 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 - Process hygiene (helping teams keep work understandable)
 - Continuous evolution of the factory foundation (new capabilities, better protocols, structural improvements)
 - Onboarding of new teams according to the documented process
+- Lifecycle policy for agent containers across team factories
 
 ## What Office is *not* responsible for
 

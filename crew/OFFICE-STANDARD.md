@@ -1,14 +1,14 @@
 # Agent Office — Standard
 
-This is the meta-factory. It does not build products itself. It decides *where* work should happen, keeps the portfolio coherent, and makes the whole system observable.
+This is the meta-factory. It does not build products itself. It decides *where* work should happen, keeps the portfolio coherent, makes the whole system observable, and continuously improves the factories.
 
 ## Golden rules
 
 1. **No silent work**  
-   Every significant action (new project, handoff, promotion to pre-prod, architectural decision, override) must leave a trace that Scrum Master can surface.
+   Every significant action (new project, handoff, promotion to pre-prod, architectural decision, foundation change, override) must leave a trace that Scrum Master can surface.
 
 2. **Teams stay specialized**  
-   Lab Crew does research. Dev Crew builds software. Office does not turn into a third implementation team.
+   Lab Crew does research. Dev Crew builds software. Office does not turn into a third product-implementation team.
 
 3. **One bus to rule them all**  
    There is a single Redis bus at Office level. Teams do not run their own message bus.
@@ -22,6 +22,9 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 6. **External agent is first-class**  
    The human works through an external Hermes agent that has the same rights to address internal agents as any Office agent.
 
+7. **Foundation is also a product**  
+   Improving Agent Office and the crew factories themselves is first-class work, led by Architect + Staff Engineer.
+
 ## What Office is responsible for
 
 - Portfolio of projects and their current stage
@@ -30,13 +33,15 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 - Stability of the shared pre-prod
 - Architectural coherence across projects and across the factory itself
 - Process hygiene (helping teams keep work understandable)
+- Continuous evolution of the factory foundation (new capabilities, better protocols, structural improvements)
+- Onboarding of new teams according to the documented process
 
 ## What Office is *not* responsible for
 
-- Writing product code
+- Writing product (customer) code as its main job
 - Running the private dev-clusters of the teams
 - Owning the product OpenSpec or Linear projects of individual products
-- Replacing the specialized skills of Lab or Dev agents
+- Replacing the specialized skills of Lab or Dev agents for normal project work
 
 ## Handoff discipline
 
@@ -44,6 +49,15 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 - Office → Dev: clear assignment + context + link to Research Package / specs
 - Dev → Office: status, blockers, promotion requests to pre-prod
 - All handoffs are visible on the bus and queryable by Scrum Master
+
+## Foundation changes
+
+Changes to Agent Office or to the Lab/Dev crew templates follow the same discipline as any important work:
+
+- Clear intent and (when non-trivial) a short design
+- Visible on the bus / event log
+- Reviewed with appropriate depth (Architect + Staff Engineer)
+- Documented so future teams inherit the improvement
 
 ## Escape hatch
 

@@ -35,7 +35,7 @@ You (via external Hermes agent)
 - **Dev Crew** builds reliable software from validated understanding.
 - **Agent Office** decides *which team*, *when*, keeps the big picture, and evolves the foundation.
 
-Clone Office → configure how many Lab/Dev instances you want → spawn from template refs. See [docs/composition.md](docs/composition.md).
+Clone Office → configure how many Lab/Dev instances you want → spawn from template refs. See [docs/composition.md](docs/composition.md) and [docs/deploy.md](docs/deploy.md).
 
 ---
 
@@ -47,9 +47,9 @@ Clone Office → configure how many Lab/Dev instances you want → spawn from te
 | Composition | Operator chooses N× Dev and M× Lab instances from pinned template refs |
 | Team isolation | Each instance is an isolated group of agents (own containers) |
 | Private environments | Each Dev instance owns its own **dev-cluster** |
-| Shared environments | One **pre-prod** cluster at Office level |
+| Shared environments | One **pre-prod** cluster at Office level (global promotion lock) |
 | Message bus | **Single Redis bus** at Office level (intra-team + inter-team) |
-| Agent containers | **Idle stop (~40m) + wake-on-demand** via lifecycle controller |
+| Agent containers | **Team agents:** idle stop + wake; **Office agents:** always-on in v1 |
 | Teams in reference v1 | 1 Lab + 2 Dev (other shapes allowed) |
 | Office agents | Architect, Staff Engineer, Scrum Master, Super DevOps |
 | Primary human entry | Through Scrum Master (but any-to-any is allowed) |
@@ -63,20 +63,16 @@ Clone Office → configure how many Lab/Dev instances you want → spawn from te
 
 ### Architect
 Strong technical leader. Watches both the factory foundation and the projects it produces.  
-Drives continuous improvement of Agent Office and the crew factories themselves.  
-Consulted on architectural decisions and performs audits.
+Drives continuous improvement of Agent Office and the crew factories themselves.
 
 ### Staff Engineer
-Right hand of the Architect. Strong hands-on technical expert.  
-Implements and reviews foundation-level changes, prototypes new factory capabilities, keeps the technical bar high.
+Right hand of the Architect. Implements and reviews foundation-level changes.
 
 ### Scrum Master
-Keeps work organized and transparent across all teams.  
-Primary convenient entry point. Answers “what is happening with project X?”, suggests next work, surfaces blockers.
+Primary convenient entry point. Portfolio transparency and sequencing.
 
 ### Super DevOps (Pre-prod Owner)
-Owns stability and reliability of the shared pre-prod cluster.  
-Defines promotion rules from private team clusters and supports team-level DevOps agents.
+Owns shared pre-prod and promotion rules.
 
 ---
 
@@ -84,11 +80,9 @@ Defines promotion rules from private team clusters and supports team-level DevOp
 
 | Repository | Purpose | Role under Office |
 |------------|---------|-------------------|
-| [lab-crew](https://github.com/camorazrushimoe/lab-crew) | Hypothesis-driven research → Research Package | **Template** for Lab instances |
+| [lab-crew](https://github.com/camorazrushimoe/lab-crew) | Research → Research Package | **Template** for Lab instances |
 | [dev-crew](https://github.com/camorazrushimoe/dev-crew) | Spec-first software development | **Template** for Dev instances |
 | **agent-office** (this repo) | Portfolio + orchestration + shared infra | **Shell** |
-
-Team craft evolves in team repos. Shell, bus protocol, pre-prod, and composition evolve here.
 
 ---
 
@@ -96,24 +90,27 @@ Team craft evolves in team repos. Shell, bus protocol, pre-prod, and composition
 
 | Document | Purpose |
 |----------|---------|
+| [docs/mvp-scope.md](docs/mvp-scope.md) | What is done vs still code |
+| [docs/deploy.md](docs/deploy.md) | How to bring Office up |
 | [docs/architecture.md](docs/architecture.md) | Full architecture |
-| [docs/composition.md](docs/composition.md) | Multi-repo composition and deploy shape |
-| [crew/OFFICE-STANDARD.md](crew/OFFICE-STANDARD.md) | Golden rules of the Office |
-| [docs/roles.md](docs/roles.md) | Detailed Office agent roles |
-| [docs/handoff-protocol.md](docs/handoff-protocol.md) | How work moves between Office ↔ Lab ↔ Dev |
-| [docs/observability.md](docs/observability.md) | CLI event log contract |
-| [docs/onboarding-team.md](docs/onboarding-team.md) | How to create / connect a new team |
-| [docs/agent-lifecycle.md](docs/agent-lifecycle.md) | Idle stop + wake-on-demand for agent containers |
-| [docs/migration-teams-to-office-bus.md](docs/migration-teams-to-office-bus.md) | Connect lab/dev crews to Office bus + lifecycle |
-| `bus/action-schema.json` | Shared bus envelope |
+| [docs/composition.md](docs/composition.md) | Multi-repo composition |
+| [docs/team-registry.md](docs/team-registry.md) | Registry schema |
+| [docs/preprod.md](docs/preprod.md) | Promotion + lock protocol |
+| [docs/agent-lifecycle.md](docs/agent-lifecycle.md) | Idle stop + wake |
+| [docs/onboarding-team.md](docs/onboarding-team.md) | Admit a new team |
+| [docs/handoff-protocol.md](docs/handoff-protocol.md) | Office ↔ Lab ↔ Dev |
+| [docs/observability.md](docs/observability.md) | CLI event log |
+| [crew/OFFICE-STANDARD.md](crew/OFFICE-STANDARD.md) | Golden rules |
+| [docs/roles.md](docs/roles.md) | Roles in detail |
+| `bus/action-schema.json` | Bus envelope |
 | `openspec/` | Capability specs |
 
 ---
 
 ## Status
 
-v0.4 — multi-repo **composition** model documented; team templates remain separate and instantiable.  
-Next: minimal runnable skeleton (Office agents + shared Redis + lifecycle + CLI log).
+**Specification for deployable Office shell is complete** (see `docs/mvp-scope.md`).  
+Next work is **implementation**: `docker-compose.yml`, doors client, event log, Hermes configs — then Office-attach in team templates.
 
 ---
 

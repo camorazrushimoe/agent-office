@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentOffice Action Envelope",
+  "description": "Standard message on the shared Office Redis bus (Office agents + all team agents)",
+  "type": "object",
+  "required": ["id", "actor", "action", "target", "timestamp"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique message id (UUID)"
+    },
+    "actor": {
+      "type": "string",
+      "description": "Who sent the action. Office agents: architect, staff-engineer, scrum-master, super-devops. Team agents use team-qualified ids when needed, e.g. dev-crew-1/developer, lab-crew-1/research-lead. Also: lifecycle, external, system."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action type. Examples: project.created, project.assigned, research.started, research.ready, implementation.started, handoff.requested, handoff.accepted, handoff.rejected, promotion.requested, promotion.completed, task.started, task.finished, task.stale, project.blocked, agent.started, agent.stopped, agent.wake, agent.wake_failed, override.recorded, audit.started, capacity.changed"
+    },
+    "target": {
+      "type": "string",
+      "description": "Recipient: agent id, team id, project id, or '*' (broadcast)"
+    },
+    "team": {
+      "type": "string",
+      "description": "Optional team instance id when the action is scoped to a factory instance"
+    },
+    "project": {
+      "type": "string",
+      "description": "Optional project id when the action is about a portfolio item"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Action payload (arbitrary JSON)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Send time (ISO 8601)"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# Instance config (secrets, real endpoints)
+.env
+.env.*
+!.env.example
+crew/agents.json
+tokens/tokens.yaml
+
+# Runtime / local
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+*.log
+
+# Workspace (project work lives outside foundation)
+workspace/
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,14 @@
+model:
+  default: qwen3-8-27b
+  provider: custom
+  base_url: https://api.runinfra.ai/v1
+  api_key: ${CUSTOM_API_KEY}
+platforms:
+  webhook:
+    enabled: true
+    extra:
+      port: 8644
+      secret: agent-office-staff-engineer-secret-8752
+platform_toolsets:
+  webhook:
+    - hermes-cli

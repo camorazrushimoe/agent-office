@@ -2,29 +2,28 @@
 
 **Date:** 2026-08-22
 
-## Done (specification)
+## Done
 
-- Architecture, roles, SOULs, handoff, observability, lifecycle, composition
-- Multi-repo model (Office shell + team templates)
-- Bus envelope, migration notes, onboarding
-- **Deploy guide** (`docs/deploy.md`)
-- **Team registry schema** (`docs/team-registry.md`)
-- **Pre-prod lock protocol** (`docs/preprod.md`) — global lock v1
-- **MVP scope** (`docs/mvp-scope.md`) — closed open questions
-- Example config: composition, registry, agents doors, `.env.example`
+### Specification
+Architecture, roles, SOULs, composition, lifecycle, handoff, registry, pre-prod lock, deploy guide, MVP scope.
 
-## Closed decisions
+### Runnable Office shell (phase A)
+- `docker-compose.yml` — Redis + 4 Office agents + crew/preprod networks
+- `Dockerfile.agent` — Compose CLI for staff-engineer / super-devops
+- Hermes `config.yaml` + SOUL per agent
+- `crew/crew-send.py` — door client
+- `crew/office-log.py` — CLI event log
+- `crew/publish-event.py` — publish to `office:events` stream
+- `crew/agents.example.json`, `.env.example`
+- **`HANDOFF-DEVOPS.md`** — instructions for the DevOps agent on hardware
 
-- Office agents: **always-on in v1**
-- Lab: **no private cluster by default**
-- Pre-prod: **single global promotion lock**
-- First deploy: **Office phase A**, then attach teams
+## For DevOps now
 
-## Remaining to actually run (implementation)
+Follow **HANDOFF-DEVOPS.md**: clone → `.env` + `agents.json` → `compose build && up` → smoke ping/log/send.
 
-1. `docker-compose.yml` + agent images for Office shell
-2. `crew-send` + `office-log` scripts
-3. Hermes `config.yaml` per Office agent
-4. Merge template-contract PRs and implement Office-attach in `dev-crew` / `lab-crew`
+## Still later (not blocking shell deploy)
 
-Spec for starting implementation/deploy of the **shell** is complete.
+- Office-attach code in `dev-crew` / `lab-crew` (template contract PRs)
+- Lifecycle controller for **team** agents
+- Real pre-prod workloads + promotion automation
+- Rich role skills beyond SOUL

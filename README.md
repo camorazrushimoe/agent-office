@@ -4,6 +4,8 @@ Agent Office is a higher-level factory that orchestrates specialized agent teams
 
 It introduces a strategic layer of agents that manage a portfolio of projects, decide when research is needed, when implementation can start, keep the whole system transparent, and continuously improve the factories themselves.
 
+**Multi-repo system:** this repository is the shell. Team factories live in separate template repos (`dev-crew`, `lab-crew`) and are instantiated as many times as you need.
+
 ---
 
 ## Core idea
@@ -23,9 +25,9 @@ You (via external Hermes agent)
 │  · continuous improvement of the factories                  │
 └─────────────────────────────────────────────────────────────┘
         │
-        ├── Lab Crew #1          (research & experimentation)
-        ├── Dev Crew #1          (implementation)
-        └── Dev Crew #2          (implementation)
+        ├── Lab Crew #1          (from lab-crew template)
+        ├── Dev Crew #1          (from dev-crew template)
+        └── Dev Crew #2          (from dev-crew template)
               agents sleep when idle · wake on demand
 ```
 
@@ -33,18 +35,22 @@ You (via external Hermes agent)
 - **Dev Crew** builds reliable software from validated understanding.
 - **Agent Office** decides *which team*, *when*, keeps the big picture, and evolves the foundation.
 
+Clone Office → configure how many Lab/Dev instances you want → spawn from template refs. See [docs/composition.md](docs/composition.md).
+
 ---
 
 ## Key architectural decisions (v1)
 
 | Decision | Choice |
 |----------|--------|
-| Team isolation | Each team is an isolated group of agents (own containers) |
-| Private environments | Each team owns its own **dev-cluster** |
+| Multi-repo | Office shell + separate **team templates** (`dev-crew`, `lab-crew`) |
+| Composition | Operator chooses N× Dev and M× Lab instances from pinned template refs |
+| Team isolation | Each instance is an isolated group of agents (own containers) |
+| Private environments | Each Dev instance owns its own **dev-cluster** |
 | Shared environments | One **pre-prod** cluster at Office level |
 | Message bus | **Single Redis bus** at Office level (intra-team + inter-team) |
 | Agent containers | **Idle stop (~40m) + wake-on-demand** via lifecycle controller |
-| Teams in v1 | 1 Lab + 2 Dev |
+| Teams in reference v1 | 1 Lab + 2 Dev (other shapes allowed) |
 | Office agents | Architect, Staff Engineer, Scrum Master, Super DevOps |
 | Primary human entry | Through Scrum Master (but any-to-any is allowed) |
 | Observability | CLI event log (visual dashboard postponed) |
@@ -74,15 +80,15 @@ Defines promotion rules from private team clusters and supports team-level DevOp
 
 ---
 
-## Relationship to existing factories
+## Relationship to team templates
 
-| Factory | Purpose | Status |
-|---------|---------|--------|
-| [lab-crew](https://github.com/camorazrushimoe/lab-crew) | Hypothesis-driven research → Research Package | Spec complete, implementation pending |
-| [dev-crew](https://github.com/camorazrushimoe/dev-crew) | Spec-first software development | Working foundation |
-| **agent-office** (this repo) | Portfolio + orchestration + foundation evolution | Specification in progress |
+| Repository | Purpose | Role under Office |
+|------------|---------|-------------------|
+| [lab-crew](https://github.com/camorazrushimoe/lab-crew) | Hypothesis-driven research → Research Package | **Template** for Lab instances |
+| [dev-crew](https://github.com/camorazrushimoe/dev-crew) | Spec-first software development | **Template** for Dev instances |
+| **agent-office** (this repo) | Portfolio + orchestration + shared infra | **Shell** |
 
-Teams remain separate repositories. Agent Office knows how to talk to them, how to route work, and how to onboard new ones.
+Team craft evolves in team repos. Shell, bus protocol, pre-prod, and composition evolve here.
 
 ---
 
@@ -91,6 +97,7 @@ Teams remain separate repositories. Agent Office knows how to talk to them, how 
 | Document | Purpose |
 |----------|---------|
 | [docs/architecture.md](docs/architecture.md) | Full architecture |
+| [docs/composition.md](docs/composition.md) | Multi-repo composition and deploy shape |
 | [crew/OFFICE-STANDARD.md](crew/OFFICE-STANDARD.md) | Golden rules of the Office |
 | [docs/roles.md](docs/roles.md) | Detailed Office agent roles |
 | [docs/handoff-protocol.md](docs/handoff-protocol.md) | How work moves between Office ↔ Lab ↔ Dev |
@@ -105,7 +112,7 @@ Teams remain separate repositories. Agent Office knows how to talk to them, how 
 
 ## Status
 
-v0.3 — OpenSpec core, SOUL drafts, bus schema, team migration notes, **agent lifecycle (idle stop + wake)**.  
+v0.4 — multi-repo **composition** model documented; team templates remain separate and instantiable.  
 Next: minimal runnable skeleton (Office agents + shared Redis + lifecycle + CLI log).
 
 ---

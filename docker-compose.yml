@@ -1,0 +1,143 @@
+name: agent-office
+
+# Agent Office — shell factory.
+# 4 Office agents (Hermes) + shared Redis bus + pre-prod network.
+#
+# Start:
+#   cp .env.example .env && cp crew/agents.example.json crew/agents.json
+#   # edit secrets / CUSTOM_API_KEY in agent config.yaml or env
+#   docker compose up -d
+#
+# Ping:
+#   python3 crew/crew-send.py scrum-master "hello"
+#   python3 crew/office-log.py --follow
+#
+# Host ports (default): Redis 6380, agents 8751–8754
+# (chosen to avoid clashing with a local dev-crew on 6379 / 8651–8654)
+
+services:
+  shared-memory:
+    image: redis:7-alpine
+    container_name: agent-office-shared-memory
+    restart: unless-stopped
+    networks: [crew, preprod]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  architect:
+    image: nousresearch/hermes-agent:latest
+    container_name: agent-office-architect
+    restart: unless-stopped
+    networks: [crew]
+    depends_on:
+      shared-memory:
+        condition: service_healthy
+    volumes:
+      - ./agents/architect/hermes-home:/opt/data
+      - ./agents/architect/skills:/opt/data/skills/agent-office:ro
+      - ./crew:/opt/crew:ro
+      - ./docs:/opt/docs:ro
+    environment:
+      - HERMES_UID=${HERMES_UID:-501}
+      - HERMES_GID=${HERMES_GID:-20}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+    ports:
+      - "8751:8644"
+    command: ["gateway", "run"]
+
+  staff-engineer:
+    image: agent-office-agent:local
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: agent-office-staff-engineer
+    restart: unless-stopped
+    networks: [crew, preprod]
+    depends_on:
+      shared-memory:
+        condition: service_healthy
+    volumes:
+      - ./agents/staff-engineer/hermes-home:/opt/data
+      - ./agents/staff-engineer/skills:/opt/data/skills/agent-office:ro
+      - ./crew:/opt/crew:ro
+      - ./docs:/opt/docs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HERMES_UID=${HERMES_UID:-501}
+      - HERMES_GID=${HERMES_GID:-20}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+    ports:
+      - "8752:8644"
+    command: ["gateway", "run"]
+
+  scrum-master:
+    image: nousresearch/hermes-agent:latest
+    container_name: agent-office-scrum-master
+    restart: unless-stopped
+    networks: [crew]
+    depends_on:
+      shared-memory:
+        condition: service_healthy
+    volumes:
+      - ./agents/scrum-master/hermes-home:/opt/data
+      - ./agents/scrum-master/skills:/opt/data/skills/agent-office:ro
+      - ./crew:/opt/crew:ro
+      - ./docs:/opt/docs:ro
+      - ./config:/opt/config:ro
+    environment:
+      - HERMES_UID=${HERMES_UID:-501}
+      - HERMES_GID=${HERMES_GID:-20}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+    ports:
+      - "8753:8644"
+    command: ["gateway", "run"]
+
+  super-devops:
+    image: agent-office-agent:local
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: agent-office-super-devops
+    restart: unless-stopped
+    networks: [crew, preprod]
+    depends_on:
+      shared-memory:
+        condition: service_healthy
+    volumes:
+      - ./agents/super-devops/hermes-home:/opt/data
+      - ./agents/super-devops/skills:/opt/data/skills/agent-office:ro
+      - ./crew:/opt/crew:ro
+      - ./docs:/opt/docs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HERMES_UID=${HERMES_UID:-501}
+      - HERMES_GID=${HERMES_GID:-20}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+    ports:
+      - "8754:8644"
+    command: ["gateway", "run"]
+
+networks:
+  crew:
+    driver: bridge
+    name: agent-office-crew
+  preprod:
+    driver: bridge
+    name: agent-office-preprod

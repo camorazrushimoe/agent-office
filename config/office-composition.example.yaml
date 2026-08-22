@@ -1,0 +1,25 @@
+office:
+  bus_url: redis://shared-memory:6379
+  preprod_network: agent-office-preprod
+
+teams:
+  - name: lab-1
+    type: lab
+    template:
+      repo: https://github.com/camorazrushimoe/lab-crew.git
+      ref: main
+    instance_dir: ../instances/lab-1
+
+  - name: dev-1
+    type: dev
+    template:
+      repo: https://github.com/camorazrushimoe/dev-crew.git
+      ref: main
+    instance_dir: ../instances/dev-1
+
+  - name: dev-2
+    type: dev
+    template:
+      repo: https://github.com/camorazrushimoe/dev-crew.git
+      ref: main
+    instance_dir: ../instances/dev-2

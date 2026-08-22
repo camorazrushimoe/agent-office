@@ -1,0 +1,14 @@
+# Agent Office — agent image with Docker Compose v2 binary.
+#
+# Super DevOps and Staff Engineer need Compose / Docker CLI against the host
+# daemon for pre-prod and foundation work.
+#
+# Build:
+#   docker compose build
+# or:
+#   docker build -t agent-office-agent:local -f Dockerfile.agent .
+FROM nousresearch/hermes-agent:latest
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends docker-compose \
+    && rm -rf /var/lib/apt/lists/*

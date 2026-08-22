@@ -1,0 +1,22 @@
+{
+  "architect": {
+    "host_url": "http://127.0.0.1:8751/webhooks/inbox",
+    "container_url": "http://architect:8644/webhooks/inbox",
+    "secret": "change-me-architect"
+  },
+  "staff-engineer": {
+    "host_url": "http://127.0.0.1:8752/webhooks/inbox",
+    "container_url": "http://staff-engineer:8644/webhooks/inbox",
+    "secret": "change-me-staff-engineer"
+  },
+  "scrum-master": {
+    "host_url": "http://127.0.0.1:8753/webhooks/inbox",
+    "container_url": "http://scrum-master:8644/webhooks/inbox",
+    "secret": "change-me-scrum-master"
+  },
+  "super-devops": {
+    "host_url": "http://127.0.0.1:8754/webhooks/inbox",
+    "container_url": "http://super-devops:8644/webhooks/inbox",
+    "secret": "change-me-super-devops"
+  }
+}

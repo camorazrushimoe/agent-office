@@ -4,7 +4,7 @@
 
 ## Overview
 
-Agent Office is a **meta-factory**: a higher-level orchestration layer that sits above specialized agent teams (Lab Crew and Dev Crew instances).
+Agent Office is a **meta-factory**: a higher-level orchestration layer that sits above specialized agent teams (Lab Crew and Dev Crew instances). It also owns the continuous evolution of the factories themselves.
 
 ```text
 External Hermes agent (you)
@@ -13,11 +13,12 @@ External Hermes agent (you)
 ┌──────────────────────────────────────────────────────────────┐
 │                        Agent Office                          │
 │                                                              │
-│   Architect          Scrum Master         Super DevOps       │
+│  Architect · Staff Engineer · Scrum Master · Super DevOps    │
 │                                                              │
-│   · shared Redis bus (single)                                │
-│   · shared pre-prod cluster                                  │
-│   · portfolio & routing logic                                │
+│  · shared Redis bus (single)                                 │
+│  · shared pre-prod cluster                                   │
+│  · portfolio & routing logic                                 │
+│  · foundation evolution                                      │
 └──────────────────────────────────────────────────────────────┘
           │
           ├── Lab Crew #1
@@ -34,11 +35,12 @@ External Hermes agent (you)
 
 ### 1. Office layer (this repository)
 
-- Three permanent agents: Architect, Scrum Master, Super DevOps
+- Four permanent agents: Architect, Staff Engineer, Scrum Master, Super DevOps
 - Single shared Redis bus
 - Shared pre-prod cluster
 - Registry of available teams
 - Portfolio of projects and their current stage
+- Responsibility for evolving the foundation of Agent Office and the crew factories
 
 ### 2. Team layer (external repositories)
 
@@ -97,23 +99,25 @@ Every agent (Office + teams) still exposes a signed webhook door (`POST /webhook
 
 | Layer | What lives there |
 |-------|------------------|
-| Foundation (this repo) | Office agent identities, skills, Office rules, bus schema, pre-prod definition |
+| Foundation (this repo + crew templates) | Office agent identities, skills, Office rules, bus schema, pre-prod definition, factory evolution work |
 | Instance config | Secrets, tokens, door registry, real endpoints of teams (gitignored) |
 | Team foundations | lab-crew / dev-crew repositories |
 | Project work | Product code, product OpenSpec, Linear projects, data |
 
-Office never mixes project code into its own foundation. Teams never mix Office concerns into their foundations.
+Office never mixes product project code into its own foundation.  
+Foundation evolution (improving the factories themselves) **is** Office work and is led by Architect + Staff Engineer.
 
-## Team registry
+## Team registry & onboarding
 
-Office maintains a registry of known teams:
+Office maintains a registry of known teams (identity, type, endpoints, capacity).
 
-- identity (name, type: lab / dev)
-- endpoints (doors, health)
-- current capacity / active projects
-- how to reach their private environments (if needed)
+New teams are added according to [docs/onboarding-team.md](onboarding-team.md).
 
-In v1 the registry is static/config-driven. Later it can become dynamic.
+## Foundation evolution
+
+Architect owns the technical roadmap of the factories.  
+Staff Engineer is the primary hands-on partner for implementing foundation changes.  
+This includes new capabilities of Agent Office, improvements to Lab/Dev crew templates, protocol upgrades, and structural changes.
 
 ## Open questions (to resolve during implementation)
 

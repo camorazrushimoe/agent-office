@@ -176,6 +176,40 @@ class BusClient:
     def publish(self, channel: str, payload_json: str) -> int:
         return int(self.cmd("PUBLISH", channel, payload_json))
 
+    def psubscribe(self, patterns: list[str]) -> Iterator[tuple[str, str]]:
+        """Blocking generator yielding (pattern, channel, message)-style
+        tuples (channel, message) matched via PSUBSCRIBE glob patterns."""
+        import threading
+
+        while True:
+            sock = self._connect()
+            try:
+                reader = sock.makefile("rb")
+                writer = sock.makefile("wb")
+                self._send(writer, "PSUBSCRIBE", *patterns)
+                ack = self._read(reader)
+                stop = threading.Event()
+
+                def watchdog():
+                    while not stop.wait(25.0):
+                        try:
+                            self._send(writer, "PING")
+                            writer.flush()
+                        except Exception:
+                            return
+
+                threading.Thread(target=watchdog, daemon=True).start()
+                try:
+                    while True:
+                        msg = self._read(reader)
+                        # pmessage = [b"pmessage", pattern, channel, payload]
+                        if isinstance(msg, list) and msg[0] == "pmessage" and len(msg) >= 4:
+                            yield msg[2], msg[3]
+                finally:
+                    stop.set()
+            finally:
+                sock.close()
+
     def subscribe(self, channels: list[str]) -> Iterator[tuple[str, str]]:
         """Blocking generator yielding (channel, message).
 

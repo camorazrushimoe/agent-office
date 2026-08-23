@@ -5,6 +5,12 @@
 crew/agents.json
 tokens/tokens.yaml
 
+# Per-agent env (contains real API keys)
+agents/*/hermes-home/.env
+
+# Rendered per-container config (contains resolved door secret)
+agents/*/hermes-home/config.yaml
+
 # Agent runtime state (hermes-homes are foundation; runtime files are local)
 agents/*/hermes-home/auth.json
 agents/*/hermes-home/auth.lock
@@ -48,3 +54,7 @@ workspace/
 .idea/
 .vscode/
 *.swp
+
+agents/*/hermes-home/.local/
+agents/*/hermes-home/skills/
+agents/*/hermes-home/review.md

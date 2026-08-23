@@ -94,6 +94,7 @@ class DockerLifecycle:
     def __init__(self):
         self.bus = BusClient()
         self.docker = DockerAPI()
+        self.project = COMPOSE_PROJECT
         self.agents = self._load_agents()
 
     def _load_agents(self) -> dict[str, dict]:
@@ -105,16 +106,25 @@ class DockerLifecycle:
 
     # ---- container helpers ------------------------------------------
 
-    @staticmethod
-    def container_name(agent_id: str) -> str:
-        return f"agent-office-{agent_id}"
+    def container_name(self, agent_id: str) -> str:
+        return f"{self.project}-{agent_id}"
+
+    def _owned(self, info: dict | None) -> bool:
+        """True only when the container belongs to OUR compose project.
+
+        This is the isolation guarantee: the controller refuses to touch
+        any container whose com.docker.compose.project label differs from
+        COMPOSE_PROJECT (fail-closed on missing labels).
+        """
+        labels = (info or {}).get("Config", {}).get("Labels", {}) or {}
+        return labels.get("com.docker.compose.project") == self.project
 
     def inspect(self, agent_id: str) -> dict | None:
         try:
             info = self.docker._request(
                 "GET", f"/containers/{self.container_name(agent_id)}/json"
             )
-            return info
+            return info if self._owned(info) else None
         except RuntimeError:
             return None
 
@@ -126,12 +136,28 @@ class DockerLifecycle:
         return bool(state.get("Running")) and not bool(state.get("Paused"))
 
     def start_agent(self, agent_id: str) -> None:
+        if not self._owned(self._inspect_unfiltered(agent_id)):
+            raise RuntimeError(
+                f"refusing to start {agent_id}: not owned by project '{self.project}'"
+            )
         self.docker._request("POST", f"/containers/{self.container_name(agent_id)}/start")
 
     def stop_agent(self, agent_id: str, timeout: int = 10) -> None:
+        if not self._owned(self._inspect_unfiltered(agent_id)):
+            raise RuntimeError(
+                f"refusing to stop {agent_id}: not owned by project '{self.project}'"
+            )
         self.docker._request(
             "POST", f"/containers/{self.container_name(agent_id)}/stop?t={timeout}"
         )
+
+    def _inspect_unfiltered(self, agent_id: str) -> dict | None:
+        try:
+            return self.docker._request(
+                "GET", f"/containers/{self.container_name(agent_id)}/json"
+            )
+        except RuntimeError:
+            return None
 
     # ---- state ------------------------------------------------------
 
@@ -156,7 +182,10 @@ class DockerLifecycle:
             payload={"summary": summary},
         )
         try:
-            self.bus.publish(EVENTS_CHANNEL, json.dumps(env, ensure_ascii=False))
+            # Durable stream + live fanout via the single publish path.
+            from bus.client import publish_event
+
+            publish_event(self.bus, env)
         except Exception as exc:
             print(f"[lifecycle] bus publish failed: {exc}", flush=True)
         print(f"[lifecycle] {action} {agent_id}: {summary}", flush=True)
@@ -229,7 +258,7 @@ class DockerLifecycle:
         def subscriber():
             while True:
                 try:
-                    for _channel, message in self.bus.subscribe([INBOX_PREFIX + "*"]):
+                    for _channel, message in self.bus.psubscribe([INBOX_PREFIX + "*"]):
                         try:
                             env = json.loads(message)
                             if env.get("action") == "agent.wake":

@@ -48,6 +48,7 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8751:8644"
@@ -76,6 +77,7 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8752:8644"
@@ -101,6 +103,7 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8753:8644"
@@ -129,6 +132,7 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8754:8644"

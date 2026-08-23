@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 crew/agents.json
+instances/*/crew/agents.json
+instances/*/.env
+instances/*/secrets/
 tokens/tokens.yaml
 
 # Per-agent env (contains real API keys)

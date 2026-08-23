@@ -39,6 +39,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/architect/hermes-home:/opt/data
+      - ./agents/render_config.py:/opt/render_config.py:ro
+      - .:/opt/repo:ro
       - ./agents/architect/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
       - ./docs:/opt/docs:ro
@@ -48,10 +50,13 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
+      - DOOR_SECRET_ARCHITECT=${DOOR_SECRET_ARCHITECT:-}
+      - DOOR_SECRET=${DOOR_SECRET_ARCHITECT:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8751:8644"
-    command: ["gateway", "run"]
+    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
 
   staff-engineer:
     image: agent-office-agent:local
@@ -66,6 +71,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/staff-engineer/hermes-home:/opt/data
+      - ./agents/render_config.py:/opt/render_config.py:ro
+      - .:/opt/repo:ro
       - ./agents/staff-engineer/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
       - ./docs:/opt/docs:ro
@@ -76,10 +83,13 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
+      - DOOR_SECRET_STAFF_ENGINEER=${DOOR_SECRET_STAFF_ENGINEER:-}
+      - DOOR_SECRET=${DOOR_SECRET_STAFF_ENGINEER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8752:8644"
-    command: ["gateway", "run"]
+    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
 
   scrum-master:
     image: nousresearch/hermes-agent:latest
@@ -91,6 +101,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/scrum-master/hermes-home:/opt/data
+      - ./agents/render_config.py:/opt/render_config.py:ro
+      - .:/opt/repo:ro
       - ./agents/scrum-master/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
       - ./docs:/opt/docs:ro
@@ -101,10 +113,13 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
+      - DOOR_SECRET_SCRUM_MASTER=${DOOR_SECRET_SCRUM_MASTER:-}
+      - DOOR_SECRET=${DOOR_SECRET_SCRUM_MASTER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8753:8644"
-    command: ["gateway", "run"]
+    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
 
   super-devops:
     image: agent-office-agent:local
@@ -119,6 +134,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/super-devops/hermes-home:/opt/data
+      - ./agents/render_config.py:/opt/render_config.py:ro
+      - .:/opt/repo:ro
       - ./agents/super-devops/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
       - ./docs:/opt/docs:ro
@@ -129,10 +146,13 @@ services:
       - HERMES_WRITE_SAFE_ROOT=/opt/data
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
+      - DOOR_SECRET_SUPER_DEVOPS=${DOOR_SECRET_SUPER_DEVOPS:-}
+      - DOOR_SECRET=${DOOR_SECRET_SUPER_DEVOPS:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8754:8644"
-    command: ["gateway", "run"]
+    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
 
 networks:
   crew:

@@ -8,7 +8,7 @@ platforms:
       port: 8644
       routes:
         inbox:
-          secret: 268153c0943f02a87bd48f12ae8841c6621b4728bd305340
+          secret: ${DOOR_SECRET}
           prompt: '{message}'
 platform_toolsets:
   webhook:

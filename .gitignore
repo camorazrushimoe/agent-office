@@ -5,6 +5,40 @@
 crew/agents.json
 tokens/tokens.yaml
 
+# Per-agent env (contains real API keys)
+agents/*/hermes-home/.env
+
+# Rendered per-container config (contains resolved door secret)
+agents/*/hermes-home/config.yaml
+
+# Agent runtime state (hermes-homes are foundation; runtime files are local)
+agents/*/hermes-home/auth.json
+agents/*/hermes-home/auth.lock
+agents/*/hermes-home/*.bak*
+agents/*/hermes-home/.skills_prompt_snapshot.json
+agents/*/hermes-home/backups/
+agents/*/hermes-home/cache/
+agents/*/hermes-home/sessions/
+agents/*/hermes-home/logs/
+agents/*/hermes-home/cron/
+agents/*/hermes-home/kanban*
+agents/*/hermes-home/audio_cache/
+agents/*/hermes-home/channel_directory.json
+agents/*/hermes-home/gateway*.json
+agents/*/hermes-home/gateway-starts.log
+agents/*/hermes-home/gateway.sock
+agents/*/hermes-home/models_dev_cache.json
+agents/*/hermes-home/provider_models_cache.json
+agents/*/hermes-home/webhook_subscriptions.json
+agents/*/hermes-home/bin/
+agents/*/hermes-home/lazy-packages/
+agents/*/hermes-home/gateway.lock
+agents/*/hermes-home/gateway.pid
+agents/*/hermes-home/models_dev_cache.etag
+agents/*/hermes-home/response_store.db*
+agents/*/hermes-home/state/
+agents/*/hermes-home/state.db*
+
 # Runtime / local
 __pycache__/
 *.py[cod]
@@ -20,3 +54,7 @@ workspace/
 .idea/
 .vscode/
 *.swp
+
+agents/*/hermes-home/.local/
+agents/*/hermes-home/skills/
+agents/*/hermes-home/review.md

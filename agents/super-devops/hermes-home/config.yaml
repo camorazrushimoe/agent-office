@@ -1,14 +1,22 @@
 model:
-  default: qwen3-8-27b
-  provider: custom
-  base_url: https://api.runinfra.ai/v1
-  api_key: ${CUSTOM_API_KEY}
+  default: stealth/ox-alpha
+  provider: openrouter
 platforms:
   webhook:
     enabled: true
     extra:
       port: 8644
-      secret: agent-office-super-devops-secret-8754
+      routes:
+        inbox:
+          secret: 65ac45ddca3fd13bddf4dac8415b814c16d7258fd31814f8
+          prompt: '{message}'
 platform_toolsets:
   webhook:
     - hermes-cli
+_config_version: 38
+plugins:
+  enabled: []
+agent: {}
+onboarding:
+  seen:
+    profile_build_offered: true

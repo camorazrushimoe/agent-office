@@ -18,6 +18,7 @@ A new team must:
 | Type | Typical source | Private environment |
 |------|----------------|---------------------|
 | Lab | `lab-crew` template | Usually lightweight workspace only |
+| Spec | `product-factory` template | None — artifacts are documents (specs, wiki, workspace) |
 | Dev | `dev-crew` template | Own private dev-cluster |
 | Future specialized | New factory template | Defined case by case |
 

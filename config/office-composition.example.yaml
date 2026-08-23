@@ -10,6 +10,16 @@ teams:
       ref: main
     instance_dir: ../instances/lab-1
 
+  # Spec team (product-factory template) — uncomment to add a spec stage
+  # between Lab (research) and Dev (implementation). No private cluster
+  # needed; artifacts are documents. Handoff event: spec.ready.
+  # - name: spec-1
+  #   type: spec
+  #   template:
+  #     repo: https://github.com/camorazrushimoe/product-factory.git
+  #     ref: main
+  #   instance_dir: ../instances/spec-1
+
   - name: dev-1
     type: dev
     template:

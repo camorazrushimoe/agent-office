@@ -16,7 +16,7 @@ Scrum Master and other Office agents use it for routing, status, and onboarding.
 version: 1
 teams:
   - name: dev-1                    # unique instance id
-    type: dev                      # lab | dev | other
+    type: dev                      # lab | spec | dev | other
     template:
       repo: https://github.com/camorazrushimoe/dev-crew.git
       ref: v0.1.0                  # tag preferred in production
@@ -42,7 +42,7 @@ teams:
 | Field | Meaning |
 |-------|--------|
 | `name` | Unique instance id across the Office |
-| `type` | `lab` or `dev` (extensible) |
+| `type` | `lab`, `spec`, or `dev` (extensible) |
 | `template.repo` + `template.ref` | Where this instance came from |
 | `status` | Operational state |
 | `endpoints.doors` | At least one door per active agent role |
@@ -52,6 +52,20 @@ teams:
 - `endpoints.lifecycle` — wake API for the instance controller
 - `bus.actor_prefix` — avoids collisions on the shared bus
 - `capacity_notes` — free text for Scrum Master
+
+### Type notes: spec teams (product-factory template)
+
+Spec team instances (`type: spec`, template
+[product-factory](https://github.com/camorazrushimoe/product-factory))
+turn business intake / validated research into **Product Specs ready for
+engineering**:
+
+- **No private dev-cluster** — artifacts are documents (specs, LLM Wiki,
+  workspace drafts), not running systems.
+- Handoff event: `spec.ready` with an artifact pointer (not the full text).
+- Human gates inside the pipeline surface as first-class bus events so
+  Office can escalate to human operators.
+- Template contract: `docs/office-template.md` in the product-factory repo.
 
 ## Operations
 

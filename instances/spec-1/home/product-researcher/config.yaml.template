@@ -1,6 +1,10 @@
 model:
-  default: stealth/ox-alpha
-  provider: openrouter
+  default: qwen3-8-27b
+  provider: custom
+  base_url: https://api.runinfra.ai/v1
+  api_key: ${CUSTOM_API_KEY}
+agent:
+  api_max_retries: 8
 platforms:
   webhook:
     enabled: true

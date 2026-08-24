@@ -28,6 +28,12 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 8. **Agents sleep when idle; wake is part of send**  
    Agent containers that have no work for the configured idle period are stopped. Delivering a message to an agent MUST wake it if needed, wait until healthy, then deliver. Work must not be silently lost because the target was stopped. See `docs/agent-lifecycle.md`.
 
+9. **Linear is the source of truth for work**  
+   Every team tracks its work in Linear (Projects + tickets). The human and Scrum Master read live status from there. See `docs/linear-workflow.md`.
+
+10. **GitHub discipline is universal**  
+    Every agent, in every team, follows the same GitHub foundation rules: feature branch → PR → review → merge, never push to `main`, never self-merge. See `docs/github-workflow.md`.
+
 ## What Office is responsible for
 
 - Portfolio of projects and their current stage

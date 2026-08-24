@@ -63,3 +63,4 @@ workspace/
 agents/*/hermes-home/.local/
 agents/*/hermes-home/skills/
 agents/*/hermes-home/review.md
+instances/*/skills/

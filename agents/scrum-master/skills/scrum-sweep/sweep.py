@@ -9,32 +9,77 @@ Usage:
   GITHUB_TOKEN=<token> python3 sweep.py --json     # machine-readable
   GITHUB_TOKEN=<token> python3 sweep.py --days 14  # wider window
 
-Stdlib only.
+Stdlib only. Handles rate-limit (403/429) with backoff, follows pagination
+(Link header), and never lets one repo's failure kill the whole sweep.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
 ORG = "camorazrushimoe"
+API = "https://api.github.com"
 
 
-def gh(path: str, token: str):
-    req = urllib.request.Request(
-        f"https://api.github.com{path}",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.load(r)
+def _retry_after(e: urllib.error.HTTPError) -> float | None:
+    v = e.headers.get("Retry-After") if e.headers else None
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except ValueError:
+        return None
+
+
+def gh_all(url: str, token: str, retries: int = 4):
+    """GET with rate-limit backoff + Link-header pagination. Returns a list."""
+    items: list = []
+    while url:
+        for attempt in range(retries):
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    remaining = r.headers.get("X-RateLimit-Remaining")
+                    if remaining is not None and remaining.isdigit() and int(remaining) < 10:
+                        print(f"[warn] GitHub rate limit low: {remaining} remaining", file=sys.stderr)
+                    data = json.load(r)
+                    link = r.headers.get("Link", "")
+                if isinstance(data, list):
+                    items.extend(data)
+                else:
+                    items.append(data)
+                    return items
+                nxt = None
+                for part in link.split(","):
+                    if 'rel="next"' in part:
+                        m = re.search(r"<([^>]+)>", part)
+                        nxt = m.group(1) if m else None
+                url = nxt if nxt else ""
+                break  # success, move to next page
+            except urllib.error.HTTPError as e:
+                if e.code in (403, 429) and attempt < retries - 1:
+                    wait = _retry_after(e) or (2 ** attempt)
+                    print(f"[warn] rate limited ({e.code}), retrying in {wait:.0f}s", file=sys.stderr)
+                    time.sleep(wait)
+                    continue
+                raise
+        else:
+            raise RuntimeError(f"rate limit exhausted for {url}")
+    return items
 
 
 def parse_dt(s: str | None) -> datetime | None:
@@ -57,16 +102,27 @@ def time_ago(dt: datetime | None, now: datetime) -> str:
 def collect(token: str, org: str, days: int) -> list[dict]:
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     now = datetime.now(timezone.utc)
-    repos = [r for r in gh(f"/users/{org}/repos?per_page=100&type=owner", token) if not r.get("fork")]
+
+    try:
+        repos = gh_all(f"{API}/users/{org}/repos?per_page=100&type=owner", token)
+    except Exception as e:
+        print(f"[error] repo list failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
     result = []
     for r in repos:
+        if r.get("fork"):
+            continue
         name = r["name"]
         pushed_dt = parse_dt(r.get("pushed_at"))
         active = bool(pushed_dt and pushed_dt >= cutoff)
+
         try:
-            items = gh(f"/repos/{org}/{name}/issues?state=open&per_page=50", token)
-        except urllib.error.HTTPError:
+            items = gh_all(f"{API}/repos/{org}/{name}/issues?state=open&per_page=50", token)
+        except Exception as e:
+            print(f"[warn] issues for {name} failed ({e}); skipping", file=sys.stderr)
             items = []
+
         issues = [i for i in items if "pull_request" not in i]
         prs = [i for i in items if "pull_request" in i]
         result.append({

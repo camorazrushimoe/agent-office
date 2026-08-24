@@ -36,6 +36,7 @@ services:
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_DEVELOPER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
@@ -62,6 +63,7 @@ services:
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_QA:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
@@ -88,6 +90,7 @@ services:
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_TECH_PM:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
@@ -115,6 +118,7 @@ services:
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
       - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_DEVOPS:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379

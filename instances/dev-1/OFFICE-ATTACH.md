@@ -37,6 +37,6 @@ instances/dev-1/
 
 ## Networks
 
-- `agent-office` (external) — bus access + lifecycle control plane
+- `agent-office-crew` (external) — bus access + lifecycle control plane
 - `dev-1-dev-env` / `dev-1-staging-env` — the team's private dev-cluster
   (project compose files attach via `external: true`)

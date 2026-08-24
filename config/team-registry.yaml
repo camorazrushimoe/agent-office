@@ -1,0 +1,51 @@
+version: 1
+teams:
+  - name: dev-1
+    type: dev
+    template:
+      repo: https://github.com/camorazrushimoe/dev-crew.git
+      ref: main
+    status: online
+    endpoints:
+      doors:
+        developer: http://127.0.0.1:8661/webhooks/inbox
+        qa: http://127.0.0.1:8662/webhooks/inbox
+        tech-pm: http://127.0.0.1:8663/webhooks/inbox
+        devops: http://127.0.0.1:8664/webhooks/inbox
+    bus:
+      actor_prefix: dev-1
+    owner_contact: scrum-master
+    registered_at: "2026-08-23T13:57:00Z"
+
+  - name: lab-1
+    type: lab
+    template:
+      repo: https://github.com/camorazrushimoe/lab-crew.git
+      ref: main
+    status: online
+    endpoints:
+      doors:
+        research-lead: http://127.0.0.1:8671/webhooks/inbox
+        research-engineer: http://127.0.0.1:8672/webhooks/inbox
+        evaluation: http://127.0.0.1:8673/webhooks/inbox
+    bus:
+      actor_prefix: lab-1
+    owner_contact: scrum-master
+    registered_at: "2026-08-24T12:28:00Z"
+
+  - name: spec-1
+    type: spec
+    template:
+      repo: https://github.com/camorazrushimoe/product-factory.git
+      ref: main
+    status: online
+    endpoints:
+      doors:
+        technical-product-manager: http://127.0.0.1:8681/webhooks/inbox
+        product-researcher: http://127.0.0.1:8682/webhooks/inbox
+        system-domain-analyst: http://127.0.0.1:8683/webhooks/inbox
+        adversarial-reviewer: http://127.0.0.1:8684/webhooks/inbox
+    bus:
+      actor_prefix: spec-1
+    owner_contact: scrum-master
+    registered_at: "2026-08-24T12:29:00Z"

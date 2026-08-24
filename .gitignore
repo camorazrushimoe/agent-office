@@ -13,7 +13,7 @@ agents/*/hermes-home/.env
 
 # Rendered per-container config (contains resolved door secret)
 agents/*/hermes-home/config.yaml
-instances/dev-1/home/*/config.yaml
+instances/*/home/*/config.yaml
 
 # Agent runtime state (hermes-homes are foundation; runtime files are local)
 agents/*/hermes-home/auth.json
@@ -42,7 +42,7 @@ agents/*/hermes-home/models_dev_cache.etag
 agents/*/hermes-home/response_store.db*
 agents/*/hermes-home/state/
 agents/*/hermes-home/state.db*
-instances/dev-1/home/*/
+instances/*/home/*/
 
 # Runtime / local
 __pycache__/

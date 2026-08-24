@@ -1,0 +1,110 @@
+name: spec-1
+
+# spec-1 — spec team instance (template: product-factory), Office-attached.
+#
+# Contract: OFFICE-ATTACH.md + template docs/office-template.md
+# - No local Redis: agents use OFFICE_BUS_URL (Office shared bus)
+# - Agents restart:"no" — lifecycle controller owns start/stop
+# - Doors: POST /webhooks/inbox on 8644, host ports see below
+
+networks:
+  agent-office:
+    external: true
+    name: agent-office-crew
+
+services:
+  technical-product-manager:
+    image: nousresearch/hermes-agent:latest
+    container_name: spec-1-technical-product-manager
+    restart: "no"
+    networks: [agent-office]
+    volumes:
+      - ./home/technical-product-manager:/opt/data
+      - ./secrets:/opt/secrets:ro
+      - ./workspace:/workspace
+      - ./crew:/opt/crew:ro
+      - ../../office:/opt/office-lib:ro
+      - ./knowledge:/knowledge
+    environment:
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DOOR_SECRET=${DOOR_SECRET_TECHNICAL_PRODUCT_MANAGER:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TEAM_NAME=spec-1
+    ports:
+      - "127.0.0.1:8681:8644"
+    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+
+  product-researcher:
+    image: nousresearch/hermes-agent:latest
+    container_name: spec-1-product-researcher
+    restart: "no"
+    networks: [agent-office]
+    volumes:
+      - ./home/product-researcher:/opt/data
+      - ./secrets:/opt/secrets:ro
+      - ./workspace:/workspace
+      - ./crew:/opt/crew:ro
+      - ../../office:/opt/office-lib:ro
+      - ./knowledge:/knowledge
+    environment:
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DOOR_SECRET=${DOOR_SECRET_PRODUCT_RESEARCHER:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TEAM_NAME=spec-1
+    ports:
+      - "127.0.0.1:8682:8644"
+    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+
+  system-domain-analyst:
+    image: nousresearch/hermes-agent:latest
+    container_name: spec-1-system-domain-analyst
+    restart: "no"
+    networks: [agent-office]
+    volumes:
+      - ./home/system-domain-analyst:/opt/data
+      - ./secrets:/opt/secrets:ro
+      - ./workspace:/workspace:ro
+      - ./crew:/opt/crew:ro
+      - ../../office:/opt/office-lib:ro
+      - ./knowledge:/knowledge:ro
+    environment:
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DOOR_SECRET=${DOOR_SECRET_SYSTEM_DOMAIN_ANALYST:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TEAM_NAME=spec-1
+    ports:
+      - "127.0.0.1:8683:8644"
+    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+
+  adversarial-reviewer:
+    image: nousresearch/hermes-agent:latest
+    container_name: spec-1-adversarial-reviewer
+    restart: "no"
+    networks: [agent-office]
+    volumes:
+      - ./home/adversarial-reviewer:/opt/data
+      - ./secrets:/opt/secrets:ro
+      - ./workspace:/workspace:ro
+      - ./crew:/opt/crew:ro
+      - ../../office:/opt/office-lib:ro
+      - ./knowledge:/knowledge:ro
+    environment:
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+      - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DOOR_SECRET=${DOOR_SECRET_ADVERSARIAL_REVIEWER:-}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TEAM_NAME=spec-1
+    ports:
+      - "127.0.0.1:8684:8644"
+    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]

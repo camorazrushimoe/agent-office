@@ -25,15 +25,18 @@ services:
     networks: [agent-office, dev-env, staging-env]
     volumes:
       - ./home/developer:/opt/data
+      - ./skills/developer:/opt/data/skills/dev-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_DEVELOPER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=dev-1
@@ -48,15 +51,18 @@ services:
     networks: [agent-office, dev-env]
     volumes:
       - ./home/qa:/opt/data
+      - ./skills/qa:/opt/data/skills/dev-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_QA:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=dev-1
@@ -71,15 +77,18 @@ services:
     networks: [agent-office]
     volumes:
       - ./home/tech-pm:/opt/data
+      - ./skills/tech-pm:/opt/data/skills/dev-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_TECH_PM:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=dev-1
@@ -94,16 +103,19 @@ services:
     networks: [agent-office, staging-env]
     volumes:
       - ./home/devops:/opt/data
+      - ./skills/devops:/opt/data/skills/dev-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_DEVOPS:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=dev-1

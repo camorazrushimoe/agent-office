@@ -24,12 +24,14 @@ services:
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_TECHNICAL_PRODUCT_MANAGER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=spec-1
@@ -48,12 +50,14 @@ services:
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_PRODUCT_RESEARCHER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=spec-1
@@ -72,12 +76,14 @@ services:
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_SYSTEM_DOMAIN_ANALYST:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=spec-1
@@ -96,12 +102,14 @@ services:
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_ADVERSARIAL_REVIEWER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=spec-1

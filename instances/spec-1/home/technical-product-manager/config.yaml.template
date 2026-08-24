@@ -1,0 +1,16 @@
+model:
+  default: stealth/ox-alpha
+  provider: openrouter
+platforms:
+  webhook:
+    enabled: true
+    extra:
+      port: 8644
+      routes:
+        inbox:
+          secret: ${DOOR_SECRET}
+          prompt: "{message}"
+platform_toolsets:
+  webhook:
+    - hermes-cli
+_config_version: 12

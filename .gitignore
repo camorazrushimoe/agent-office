@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 crew/agents.json
+instances/*/crew/agents.json
+instances/*/.env
+instances/*/secrets/
 tokens/tokens.yaml
 
 # Per-agent env (contains real API keys)
@@ -10,6 +13,7 @@ agents/*/hermes-home/.env
 
 # Rendered per-container config (contains resolved door secret)
 agents/*/hermes-home/config.yaml
+instances/*/home/*/config.yaml
 
 # Agent runtime state (hermes-homes are foundation; runtime files are local)
 agents/*/hermes-home/auth.json
@@ -38,6 +42,7 @@ agents/*/hermes-home/models_dev_cache.etag
 agents/*/hermes-home/response_store.db*
 agents/*/hermes-home/state/
 agents/*/hermes-home/state.db*
+instances/*/home/*/
 
 # Runtime / local
 __pycache__/

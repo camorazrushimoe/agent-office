@@ -1,0 +1,13 @@
+# Scrum Master portfolio — memory of active projects.
+# Copy to portfolio.yaml (gitignored runtime state) — this is the documented
+# shape. The sweep skill reads/writes portfolio.yaml.
+
+version: 1
+projects: []
+  # - name: spaced-bro                     # short project name
+  #   repos: [camorazrushimoe/spaced-bro]  # one or more GitHub repos
+  #   linear_project: null                 # Linear project name (optional)
+  #   stage: implementation                # research | spec | implementation | review | done | parked
+  #   tags: [bug, feature]                 # GitHub label buckets triaged so far
+  #   last_activity: 2026-08-24            # last observed activity (ISO date)
+  #   notes: ""                            # free-form (blockers, owners, ...)

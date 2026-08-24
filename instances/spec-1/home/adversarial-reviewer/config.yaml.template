@@ -18,3 +18,7 @@ platform_toolsets:
   webhook:
     - hermes-cli
 _config_version: 12
+
+auxiliary:
+  background_review:
+    enabled: false  # factory policy: no runtime self-improvement; skills change via PR only

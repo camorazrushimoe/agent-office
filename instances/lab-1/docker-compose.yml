@@ -28,7 +28,8 @@ services:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_RESEARCH_LEAD:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=lab-1
@@ -51,7 +52,8 @@ services:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_RESEARCH_ENGINEER:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=lab-1
@@ -74,7 +76,8 @@ services:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
+      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
       - DOOR_SECRET=${DOOR_SECRET_EVALUATION:-}
       - OFFICE_BUS_URL=redis://shared-memory:6379
       - TEAM_NAME=lab-1

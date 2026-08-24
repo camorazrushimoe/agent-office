@@ -20,10 +20,12 @@ services:
     networks: [agent-office]
     volumes:
       - ./home/research-lead:/opt/data
+      - ./skills/research-lead:/opt/data/skills/lab-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
@@ -44,10 +46,12 @@ services:
     networks: [agent-office]
     volumes:
       - ./home/research-engineer:/opt/data
+      - ./skills/research-engineer:/opt/data/skills/lab-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
@@ -68,10 +72,12 @@ services:
     networks: [agent-office]
     volumes:
       - ./home/evaluation:/opt/data
+      - ./skills/evaluation:/opt/data/skills/lab-crew:ro
       - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}

@@ -24,6 +24,7 @@ services:
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
@@ -49,6 +50,7 @@ services:
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
@@ -74,6 +76,7 @@ services:
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
@@ -99,6 +102,7 @@ services:
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../docs:/opt/docs:ro
       - ./knowledge:/knowledge:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}

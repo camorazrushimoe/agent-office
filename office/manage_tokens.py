@@ -33,6 +33,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import os
 import secrets
 import sys
@@ -228,20 +229,70 @@ def cmd_generate(force: bool) -> int:
     return 0
 
 
+def _write_registry(path: Path, entries: dict) -> None:
+    """Write a door registry, preserving non-secret fields already present.
+
+    Only `secret` is authoritative from tokens.yaml; fields the instance
+    added itself (e.g. `wake_hint`) are kept as-is.
+    """
+    existing = {}
+    if path.is_file():
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            existing = {}
+    merged = {}
+    for agent, cfg in entries.items():
+        prev = existing.get(agent) or {}
+        if not isinstance(prev, dict):
+            prev = {}
+        merged[agent] = {**prev, **cfg}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+
+
 def cmd_derive_agents() -> int:
+    """Regenerate every door registry (office + each instance) from tokens.yaml."""
     tokens = load_tokens()
-    doors = (tokens.get("doors") or {}).get("office") or {}
-    out = {}
+    doors = tokens.get("doors") or {}
+    written = 0
+
+    # Office registry — host ports differ per agent.
+    office = doors.get("office") or {}
+    entries = {}
     for agent, port in OFFICE_PORTS.items():
-        out[agent] = {
+        entries[agent] = {
             "host_url": f"http://127.0.0.1:{port}/webhooks/inbox",
             "container_url": f"http://{agent}:8644/webhooks/inbox",
-            "secret": doors.get(agent, ""),
+            "secret": office.get(agent, ""),
         }
-    AGENTS_PATH.write_text(
-        __import__("json").dumps(out, indent=2) + "\n", encoding="utf-8")
+    _write_registry(AGENTS_PATH, entries)
     print(f"[manage-tokens] wrote {AGENTS_PATH.relative_to(ROOT)} "
-          f"({len(out)} office doors)")
+          f"({len(entries)} office doors)")
+    written += len(entries)
+
+    # Instance registries — agents talk to each other through these, so a
+    # rotation that skips them silently breaks intra-team messaging (401).
+    for instance, agents in doors.items():
+        if instance == "office":
+            continue
+        path = ROOT / "instances" / instance / "crew" / "agents.json"
+        if not path.parent.is_dir():
+            print(f"[manage-tokens] skip {instance}: no {path.parent.relative_to(ROOT)}")
+            continue
+        entries = {}
+        for agent, secret in agents.items():
+            entries[agent] = {
+                "container_url":
+                    f"http://{instance}-{agent}:8644/webhooks/inbox",
+                "secret": secret,
+            }
+        _write_registry(path, entries)
+        print(f"[manage-tokens] wrote {path.relative_to(ROOT)} "
+              f"({len(entries)} {instance} doors)")
+        written += len(entries)
+
+    print(f"[manage-tokens] {written} door(s) synced from tokens.yaml")
     return 0
 
 

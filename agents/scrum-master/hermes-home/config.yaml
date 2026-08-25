@@ -1,6 +1,8 @@
 model:
-  default: stealth/ox-alpha
-  provider: openrouter
+  default: qwen3-8-27b
+  provider: custom
+  base_url: https://api.runinfra.ai/v1
+  api_key: rp_h7iekmpu76fvvdgbg7n17b1jxrgaq1pth97fwh10
 platforms:
   webhook:
     enabled: true
@@ -20,6 +22,7 @@ agent: {}
 onboarding:
   seen:
     profile_build_offered: true
+
 auxiliary:
   background_review:
     enabled: false  # factory policy: no runtime self-improvement; skills change via PR only

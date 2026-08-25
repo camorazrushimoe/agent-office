@@ -34,6 +34,8 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 10. **GitHub discipline is universal**  
     Every agent, in every team, follows the same GitHub foundation rules: feature branch → PR → review → merge, never push to `main`, never self-merge. See `docs/github-workflow.md`.
 
+11. **Credential discovery** — when an agent needs `GITHUB_TOKEN`, `LINEAR_API_KEY`, etc., it checks the **process environment first** (`printenv`), not dotfiles; commented-out lines mean "absent". See `docs/credential-discovery.md`.
+
 ## What Office is responsible for
 
 - Portfolio of projects and their current stage

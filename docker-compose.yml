@@ -37,13 +37,17 @@ services:
         condition: service_healthy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/opt/repo:ro                       # agents' logs for activity signal
+      - ./office:/opt/office-lib:ro           # bus.client — factory_control.py imports it
+      - .:/opt/repo:ro                        # agents' logs for activity signal
     environment:
       - IDLE_TIMEOUT_S=${IDLE_TIMEOUT_S:-2400}
       - CHECK_INTERVAL=${CHECK_INTERVAL:-120}
       - WAKE_TIMEOUT_S=${WAKE_TIMEOUT_S:-90}
       - OFFICE_BUS_URL=redis://shared-memory:6379
     networks: [crew]
+    # Run the code from the mounted repo, not the copy baked into the image:
+    # otherwise every lifecycle fix needs an image rebuild to take effect.
+    command: ["python3", "/opt/office-lib/lifecycle/factory_control.py"]
 
   shared-memory:
     image: redis:7-alpine

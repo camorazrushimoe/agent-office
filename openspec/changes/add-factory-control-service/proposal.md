@@ -35,10 +35,12 @@ the reviewed spec.
   (`conversation_loop`, `tool_executor`, inbound message, response ready)
   in that agent's Hermes log. This replaces the never-implemented
   `last_active` Redis key contract.
-- The legacy `docker_controller.py` is superseded by this service; kept for
-  reference until the change is deployed.
+- The legacy `docker_controller.py` is superseded by this service; removal is
+  tracked in `tasks.md` and happens in the implementation PR.
 - Operator ergonomics: the supervisor runs headless; dashboards (e.g.
   factory-dashboard skill) read docker state directly and need no changes.
+- Config knobs (`.env.example`): `IDLE_TIMEOUT=40m`, `CHECK_INTERVAL=120s`,
+  `WAKE_TIMEOUT=90s`.
 
 # Capabilities
 

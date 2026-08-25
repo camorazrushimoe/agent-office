@@ -22,7 +22,6 @@ import subprocess
 import sys
 import threading
 import time
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,8 +31,6 @@ REGISTRY = Path(os.environ.get(
 IDLE_TIMEOUT_S = int(os.environ.get("IDLE_TIMEOUT_S", str(40 * 60)))
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "120"))
 WAKE_TIMEOUT_S = int(os.environ.get("WAKE_TIMEOUT_S", "90"))
-BUSY_LOCK_TTL_S = int(os.environ.get("BUSY_LOCK_TTL_S", str(15 * 60)))
-DOOR_PORTS = {}                                    # id -> host port (optional)
 
 sys.path.insert(0, "/opt/office-lib")
 from bus.client import BusClient, make_envelope, publish_event  # noqa: E402
@@ -51,11 +48,15 @@ def log(msg: str) -> None:
     print(f"[fc] {datetime.now(timezone.utc):%H:%M:%S} {msg}", flush=True)
 
 
-def emit(action: str, target: str, summary: str) -> None:
+def emit(action: str, target: str, summary: str,
+         extra: dict | None = None) -> None:
     try:
+        payload = {"summary": summary}
+        if extra:
+            payload.update(extra)
         publish_event(BusClient(), make_envelope(
             actor="factory-control", action=action, target=target,
-            payload={"summary": summary}))
+            payload=payload))
         log(f"emit {action} {target}: {summary}")
     except Exception as exc:
         log(f"bus publish failed ({action} {target}): {exc}")
@@ -64,7 +65,8 @@ def emit(action: str, target: str, summary: str) -> None:
 def load_registry() -> list[dict]:
     raw = json.loads(REGISTRY.read_text(encoding="utf-8"))
     agents = raw.get("agents") or []
-    assert isinstance(agents, list) and agents, f"empty registry: {REGISTRY}"
+    if not isinstance(agents, list) or not agents:
+        raise ValueError(f"empty or invalid registry: {REGISTRY}")
     return agents
 
 
@@ -108,11 +110,12 @@ def seconds_idle(log_path: Path) -> float | None:
         return None
 
 
-def busy(agent_id: str, bus: BusClient) -> bool:
+def busy(agent_id: str, bus: BusClient) -> bool | None:
+    """True/False from bus; None on error (fail-safe: skip the agent)."""
     try:
         return bool(bus.get_key(f"office:busy:{agent_id}"))
     except Exception:
-        return False
+        return None
 
 
 # ---- docker ---------------------------------------------------------------
@@ -123,51 +126,39 @@ def running_containers() -> set[str]:
 
 
 def docker_start(name: str) -> tuple[bool, str]:
+    """Start and wait for the container to be Running (poll every 2s).
+
+    Agent containers define no docker healthcheck, so "healthy" in the
+    docker sense never appears; Running + gateway startup is our readiness
+    proxy (spec: health = door responds / gateway ready).
+    """
     rc, out = sh(["docker", "start", name])
     if rc != 0:
         return False, out.strip()[:200]
     deadline = time.time() + WAKE_TIMEOUT_S
     while time.time() < deadline:
-        rrc, rout = sh(["docker", "ps", "--format",
-                        "{{.Names}}|{{.Status}}"])
-        for line in rout.splitlines():
-            n, _, st = line.partition("|")
-            if n == name and "healthy" in st.lower():
-                return True, st
-        time.sleep(3)
-    # health label may be absent; accept "running" past timeout
-    rrc, rout = sh(["docker", "inspect", "-f",
-                    "{{.State.Running}}|{{.State.Health.Status}}", name])
-    if rout.startswith("true"):
-        return True, rout.strip()
-    return False, f"health wait timeout after {WAKE_TIMEOUT_S}s"
-
-
-def healthy_via_door(name: str) -> bool:
-    port = DOOR_PORTS.get(name)
-    if not port:
-        return True                      # no door mapping -> skip probe
-    try:
-        req = urllib.request.Request(
-            f"http://127.0.0.1:{port}/webhooks/inbox", method="POST",
-            data=b"{}", headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=5)
-        return True
-    except Exception:
-        return True                      # 4xx/5xx still means gateway is up
+        rrc, rout = sh(["docker", "inspect", "-f",
+                        "{{.State.Running}}|{{.State.Health.Status}}", name])
+        running, _, health = rout.strip().partition("|")
+        if rrc == 0 and running == "true" and health in ("", "none", "healthy"):
+            return True, "running"
+        time.sleep(2)
+    return False, f"start wait timeout after {WAKE_TIMEOUT_S}s"
 
 
 # ---- reaper ---------------------------------------------------------------
 
-def reap_once(registry: list[dict]) -> None:
-    bus = BusClient()
+def reap_once(registry: list[dict], bus: BusClient) -> None:
     running = running_containers()
-    now = time.time()
     for a in registry:
         name = a["container"]
         if name not in running:
             continue
-        if busy(a["id"], bus):
+        is_busy = busy(a["id"], bus)
+        if is_busy is None:
+            log(f"skip {name}: bus unavailable (fail-safe)")
+            continue
+        if is_busy:
             continue
         idle = seconds_idle(REPO / a["log_path"] / "logs/agent.log")
         if idle is None or idle < IDLE_TIMEOUT_S:
@@ -177,7 +168,8 @@ def reap_once(registry: list[dict]) -> None:
         rc, _ = sh(["docker", "stop", "-t", "30", name], timeout=60)
         emit("agent.stopped", a["id"],
              f"idle {int(idle // 60)}m >= {IDLE_TIMEOUT_S // 60}m"
-             + ("" if rc == 0 else " (stop command failed)"))
+             + ("" if rc == 0 else " (stop command failed)"),
+             extra={"idle_seconds": int(idle)})
 
 
 # ---- wake -----------------------------------------------------------------
@@ -194,7 +186,6 @@ def wake(target: str, registry: list[dict]) -> None:
     log(f"waking {name}")
     ok, note = docker_start(name)
     if ok:
-        healthy_via_door(name)
         emit("agent.started", entry["id"], "wake")
     else:
         emit("agent.wake_failed", entry["id"], note)
@@ -221,12 +212,13 @@ def listen_wakes(registry: list[dict]) -> None:
 
 def main() -> int:
     registry = load_registry()
+    bus = BusClient()
     log(f"online: agents={len(registry)} idle={IDLE_TIMEOUT_S}s "
         f"interval={CHECK_INTERVAL}s wake={WAKE_TIMEOUT_S}s")
     threading.Thread(target=listen_wakes, args=(registry,), daemon=True).start()
     while True:
         try:
-            reap_once(registry)
+            reap_once(registry, bus)
         except Exception as exc:
             log(f"reap error: {exc}")
         time.sleep(CHECK_INTERVAL)

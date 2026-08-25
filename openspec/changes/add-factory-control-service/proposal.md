@@ -53,5 +53,6 @@ the reviewed spec.
 - Affected code:
   - NEW `office/lifecycle/factory_control.py` (supervisor, adapted from the
     proven `idle_reaper.py`)
+  - NEW `office/registry/factory-agents.json` (exhaustive allowlist)
   - `docker-compose.yml` — new always-on `factory-control` service
-  - `.env.example` — IDLE_TIMEOUT, CHECK_INTERVAL knobs
+  - `.env.example` — `IDLE_TIMEOUT`, `CHECK_INTERVAL`, `WAKE_TIMEOUT` knobs

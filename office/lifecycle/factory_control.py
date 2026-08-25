@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -31,6 +32,7 @@ REGISTRY = Path(os.environ.get(
 IDLE_TIMEOUT_S = int(os.environ.get("IDLE_TIMEOUT_S", str(40 * 60)))
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "120"))
 WAKE_TIMEOUT_S = int(os.environ.get("WAKE_TIMEOUT_S", "90"))
+DOOR_PORT = int(os.environ.get("DOOR_PORT", "8644"))
 
 sys.path.insert(0, "/opt/office-lib")
 from bus.client import BusClient, make_envelope, publish_event  # noqa: E402
@@ -125,24 +127,55 @@ def running_containers() -> set[str]:
     return set(out.split()) if rc == 0 else set()
 
 
+def door_open(name: str, port: int = DOOR_PORT, timeout: float = 2.0) -> bool:
+    """True when the agent's gateway accepts a TCP connection on its door.
+
+    factory-control shares the `crew` network with the agents, so the
+    container name resolves via Docker DNS. This is the readiness signal —
+    State.Running alone fires before the gateway binds the port.
+    """
+    try:
+        with socket.create_connection((name, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
 def docker_start(name: str) -> tuple[bool, str]:
     """Start and wait for the container to be Running (poll every 2s).
 
     Agent containers define no docker healthcheck, so "healthy" in the
-    docker sense never appears; Running + gateway startup is our readiness
-    proxy (spec: health = door responds / gateway ready).
+    docker sense never appears. Readiness = the gateway actually accepts a
+    TCP connection on its door port (spec: health = door responds / gateway
+    ready). Waiting only for State.Running returns too early: the container
+    is up but the gateway has not bound the port yet, so callers that send
+    immediately after a wake get "connection reset by peer".
     """
     rc, out = sh(["docker", "start", name])
     if rc != 0:
         return False, out.strip()[:200]
     deadline = time.time() + WAKE_TIMEOUT_S
+    running_seen = False
     while time.time() < deadline:
-        rrc, rout = sh(["docker", "inspect", "-f",
-                        "{{.State.Running}}|{{.State.Health.Status}}", name])
-        running, _, health = rout.strip().partition("|")
-        if rrc == 0 and running == "true" and health in ("", "none", "healthy"):
-            return True, "running"
+        if not running_seen:
+            # Guard .State.Health: agent containers declare no healthcheck, and
+            # `{{.State.Health.Status}}` makes `docker inspect` fail outright
+            # with "map has no entry for key Health" (exit 1, empty output) —
+            # which used to make every wake time out as wake_failed.
+            rrc, rout = sh([
+                "docker", "inspect", "-f",
+                "{{.State.Running}}|"
+                "{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}",
+                name])
+            running, _, health = rout.strip().partition("|")
+            running_seen = (rrc == 0 and running == "true"
+                            and health in ("", "none", "healthy"))
+        if running_seen and door_open(name):
+            return True, "door ready"
         time.sleep(2)
+    if running_seen:
+        return False, (f"gateway did not open port {DOOR_PORT} within "
+                       f"{WAKE_TIMEOUT_S}s (container is running)")
     return False, f"start wait timeout after {WAKE_TIMEOUT_S}s"
 
 

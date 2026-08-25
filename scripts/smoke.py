@@ -224,17 +224,35 @@ def sign(secret: str, payload: str) -> str:
     ).hexdigest()
 
 
-def door_post(url: str, secret: str, message: str, timeout: float = 15.0) -> int:
+def door_post(url: str, secret: str, message: str, timeout: float = 15.0,
+              attempts: int = 6, backoff: float = 3.0) -> int:
+    """POST a signed message to an agent door, retrying transient boot races.
+
+    A freshly woken container reports Running before its gateway binds the
+    port, so the first POST can hit a closed/half-open socket
+    ("connection reset by peer"). HTTP responses — including 401 — are
+    returned immediately; only connection-level failures are retried.
+    """
     body = json.dumps({"message": message}, ensure_ascii=False)
     headers = {
         "Content-Type": "application/json",
         "X-Hub-Signature-256": sign(secret, body),
     }
-    req = urllib.request.Request(
-        url, data=body.encode("utf-8"), headers=headers, method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.status
+    last: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        req = urllib.request.Request(
+            url, data=body.encode("utf-8"), headers=headers, method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status
+        except urllib.error.HTTPError:
+            raise                      # real HTTP answer — do not retry
+        except (urllib.error.URLError, OSError) as exc:
+            last = exc
+            if attempt < attempts:
+                time.sleep(backoff)
+    raise last if last else RuntimeError("door_post failed")
 
 
 # ---- levels -----------------------------------------------------------------

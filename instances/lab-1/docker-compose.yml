@@ -6,6 +6,7 @@ name: lab-1
 # - No local Redis: agents use OFFICE_BUS_URL (Office shared bus)
 # - Agents restart:"no" — lifecycle controller owns start/stop
 # - Doors: POST /webhooks/inbox on 8644, host ports see below
+# - Credentials resolved from the office root tokens/tokens.yaml (single source)
 
 networks:
   agent-office:
@@ -21,24 +22,23 @@ services:
     volumes:
       - ./home/research-lead:/opt/data
       - ./skills/research-lead:/opt/data/skills/lab-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_RESEARCH_LEAD:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
+      - AGENT_ID=research-lead
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8671:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   research-engineer:
     image: nousresearch/hermes-agent:latest
@@ -48,24 +48,23 @@ services:
     volumes:
       - ./home/research-engineer:/opt/data
       - ./skills/research-engineer:/opt/data/skills/lab-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_RESEARCH_ENGINEER:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
+      - AGENT_ID=research-engineer
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8672:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   evaluation:
     image: nousresearch/hermes-agent:latest
@@ -75,21 +74,20 @@ services:
     volumes:
       - ./home/evaluation:/opt/data
       - ./skills/evaluation:/opt/data/skills/lab-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_EVALUATION:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
+      - AGENT_ID=evaluation
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8673:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]

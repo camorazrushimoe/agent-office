@@ -21,7 +21,7 @@ Team instances (`dev-crew` / `lab-crew`) are **out of scope** for this first dep
 - Docker Engine + Docker Compose v2
 - Git
 - Outbound network to pull `redis:7-alpine` and `nousresearch/hermes-agent:latest`
-- LLM API key for Hermes (`CUSTOM_API_KEY` or change `config.yaml` model block to your provider)
+- LLM API key for Hermes (put it in `tokens/tokens.yaml` under `llm.factories.office`)
 
 ## Steps
 
@@ -29,14 +29,12 @@ Team instances (`dev-crew` / `lab-crew`) are **out of scope** for this first dep
 git clone https://github.com/camorazrushimoe/agent-office.git
 cd agent-office
 
-cp .env.example .env
-# Set at least:
-#   CUSTOM_API_KEY=...
-#   GITHUB_TOKEN=...   # optional
-
-cp crew/agents.example.json crew/agents.json
-# Secrets in agents.json MUST match platforms.webhook.extra.secret in each
-# agents/*/hermes-home/config.yaml (examples already aligned).
+cp tokens/tokens.example.yaml tokens/tokens.yaml
+# Fill in llm.factories.office, github.token, linear.api_key.
+# Or consolidate from an existing .env:
+python3 office/manage_tokens.py migrate
+python3 office/manage_tokens.py check
+python3 office/manage_tokens.py derive-agents
 
 # Build images that need Docker Compose CLI (staff-engineer, super-devops)
 docker compose build
@@ -82,7 +80,7 @@ Chosen to avoid clashing with a local **dev-crew** (6379 / 8651–8654).
 | Symptom | Check |
 |---------|--------|
 | Image pull fail | Registry access / mirror for Docker Hub |
-| Door 401 | `agents.json` secret ≠ `config.yaml` webhook secret |
+| Door 401 | `crew/agents.json` secret ≠ `tokens.yaml` door (re-run `office/manage_tokens.py derive-agents`) |
 | Door connection refused | `docker compose ps`, port bind, firewall |
 | Agent crash loop | Logs: `docker logs agent-office-scrum-master` — often missing API key |
 | office-log empty | Normal until events published; try `publish-event.py` |
@@ -98,6 +96,7 @@ Chosen to avoid clashing with a local **dev-crew** (6379 / 8651–8654).
 ## Spec references (read if stuck)
 
 - `docs/deploy.md` — full deploy path
+- `docs/secrets.md` — secrets single-source + rotation runbook
 - `docs/mvp-scope.md` — what is in / out of MVP
 - `docs/composition.md` — multi-repo later
 - `docs/preprod.md` — pre-prod rules (not required for shell-only smoke)

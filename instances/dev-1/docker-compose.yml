@@ -7,6 +7,7 @@ name: dev-1
 # - Agents restart:"no" — lifecycle controller owns start/stop
 # - Doors: POST /webhooks/inbox on 8644, host ports 8661–8664
 # - Private dev-cluster networks are team-owned (dev-env / staging-env)
+# - Credentials resolved from the office root tokens/tokens.yaml (single source)
 
 networks:
   agent-office:
@@ -26,24 +27,23 @@ services:
     volumes:
       - ./home/developer:/opt/data
       - ./skills/developer:/opt/data/skills/dev-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_DEVELOPER:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
+      - AGENT_ID=developer
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8661:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   qa:
     image: nousresearch/hermes-agent:latest
@@ -53,24 +53,23 @@ services:
     volumes:
       - ./home/qa:/opt/data
       - ./skills/qa:/opt/data/skills/dev-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_QA:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
+      - AGENT_ID=qa
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8662:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   tech-pm:
     image: nousresearch/hermes-agent:latest
@@ -80,24 +79,23 @@ services:
     volumes:
       - ./home/tech-pm:/opt/data
       - ./skills/tech-pm:/opt/data/skills/dev-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_TECH_PM:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
+      - AGENT_ID=tech-pm
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8663:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   devops:
     image: nousresearch/hermes-agent:latest
@@ -107,22 +105,21 @@ services:
     volumes:
       - ./home/devops:/opt/data
       - ./skills/devops:/opt/data/skills/dev-crew:ro
-      - ./secrets:/opt/secrets:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
       - ../../office:/opt/office-lib:ro
+      - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
       - HERMES_WRITE_SAFE_ROOT=/opt/data:/workspace
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - DOOR_SECRET=${DOOR_SECRET_DEVOPS:-}
-      - OFFICE_BUS_URL=redis://shared-memory:6379
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
+      - AGENT_ID=devops
+      - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8664:8644"
-    command: ["sh", "-c", "python3 /opt/crew/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]

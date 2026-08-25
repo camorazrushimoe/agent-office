@@ -6,7 +6,10 @@ crew/agents.json
 instances/*/crew/agents.json
 instances/*/.env
 instances/*/secrets/
+# Single source of truth for ALL factory credentials. NEVER commit.
+# tokens/tokens.example.yaml is the committed schema reference.
 tokens/tokens.yaml
+tokens/tokens.yaml.bak-*
 
 # Per-agent env (contains real API keys)
 agents/*/hermes-home/.env
@@ -18,6 +21,7 @@ instances/*/home/*/config.yaml
 # Agent runtime state (hermes-homes are foundation; runtime files are local)
 agents/*/hermes-home/auth.json
 agents/*/hermes-home/auth.lock
+agents/*/hermes-home/.clean_shutdown
 agents/*/hermes-home/*.bak*
 agents/*/hermes-home/.skills_prompt_snapshot.json
 agents/*/hermes-home/backups/

@@ -51,8 +51,9 @@ external Hermes agent; Scrum Master is the recommended entry point.
 ```bash
 git clone https://github.com/camorazrushimoe/agent-office.git
 cd agent-office
-cp .env.example .env                    # set CUSTOM_API_KEY=
-cp crew/agents.example.json crew/agents.json
+cp tokens/tokens.example.yaml tokens/tokens.yaml   # fill in tokens (docs/secrets.md)
+python3 office/manage_tokens.py check
+python3 office/manage_tokens.py derive-agents
 
 docker compose build
 docker compose up -d
@@ -117,6 +118,7 @@ You (via external Hermes agent)
 |----------|---------|
 | [HANDOFF-DEVOPS.md](HANDOFF-DEVOPS.md) | **Give this to DevOps** |
 | [docs/deploy.md](docs/deploy.md) | Deploy guide |
+| [docs/secrets.md](docs/secrets.md) | **Secrets single-source + rotation runbook** |
 | [docs/composition.md](docs/composition.md) | Multi-repo composition |
 | [docs/architecture.md](docs/architecture.md) | System architecture |
 | [docs/roles.md](docs/roles.md) | Roles |

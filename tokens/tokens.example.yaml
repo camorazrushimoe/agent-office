@@ -1,0 +1,52 @@
+# ============================================================================
+# AGENT-OFFICE SECRETS — SINGLE SOURCE OF TRUTH (EXAMPLE — copy to tokens.yaml)
+#
+#   cp tokens/tokens.example.yaml tokens/tokens.yaml
+#   # then fill in real values, OR run:  python3 office/manage_tokens.py migrate
+#
+# tokens/tokens.yaml is GITIGNORED. NEVER commit it, NEVER share it, NEVER
+# print it. Every agent resolves its credentials from this one file via the
+# TOKENS_FILE env var (see office/credentials.py).
+#
+# Format: YAML scalars only — no lists, no quotes, 2-space indent, no " #"
+# inside values. Door secrets are 48-hex (generate with manage_tokens.py).
+# ============================================================================
+
+llm:
+  # One LLM key per factory. "office" is the Agent Office shell; the rest are
+  # team template names. An instance maps to its factory (dev-1 -> dev-crew).
+  base_url: https://api.runinfra.ai/v1
+  factories:
+    office: ""                 # <-- office agents LLM key
+    dev-crew: ""               # <-- dev teams LLM key
+    lab-crew: ""               # <-- lab teams LLM key
+    product-factory: ""        # <-- spec teams LLM key
+
+# Shared credentials — the owner's tokens, identical for every agent.
+linear:
+  api_key: ""                  # lin_api_...
+github:
+  token: ""                    # ghp_... or github_pat_...
+
+# Per-instance, per-agent webhook door secrets (container<->container HMAC).
+# Each value is a random 48-hex string; never copy-paste between agents.
+doors:
+  office:
+    architect: ""
+    staff-engineer: ""
+    scrum-master: ""
+    super-devops: ""
+  dev-1:
+    developer: ""
+    qa: ""
+    tech-pm: ""
+    devops: ""
+  lab-1:
+    research-lead: ""
+    research-engineer: ""
+    evaluation: ""
+  spec-1:
+    technical-product-manager: ""
+    product-researcher: ""
+    system-domain-analyst: ""
+    adversarial-reviewer: ""

@@ -3,9 +3,16 @@ name: agent-office
 # Agent Office — shell factory.
 # 4 Office agents (Hermes) + shared Redis bus + pre-prod network.
 #
+# Secrets live in ONE gitignored file (tokens/tokens.yaml) at the repo root.
+# Each agent resolves its own credentials from it via office/render_config.py
+# (TOKENS_FILE / FACTORY_NAME / AGENT_ID). No secrets in git, no secret env
+# vars in this file.
+#
+# One-time setup:
+#   python3 office/manage_tokens.py migrate      # consolidate from legacy .env
+#   python3 office/manage_tokens.py derive-agents
+#
 # Start:
-#   cp .env.example .env && cp crew/agents.example.json crew/agents.json
-#   # edit secrets / CUSTOM_API_KEY in agent config.yaml or env
 #   docker compose up -d
 #
 # Ping:
@@ -61,7 +68,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/architect/hermes-home:/opt/data
-      - ./agents/render_config.py:/opt/render_config.py:ro
+      - ./office:/opt/office-lib:ro
+      - ./tokens:/opt/tokens:ro
       - .:/opt/repo:ro
       - ./agents/architect/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
@@ -70,16 +78,13 @@ services:
       - HERMES_UID=${HERMES_UID:-501}
       - HERMES_GID=${HERMES_GID:-20}
       - HERMES_WRITE_SAFE_ROOT=/opt/data
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
-      - DOOR_SECRET_ARCHITECT=${DOOR_SECRET_ARCHITECT:-}
-      - DOOR_SECRET=${DOOR_SECRET_ARCHITECT:-}
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=office
+      - AGENT_ID=architect
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8751:8644"
-    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   staff-engineer:
     image: agent-office-agent:local
@@ -94,7 +99,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/staff-engineer/hermes-home:/opt/data
-      - ./agents/render_config.py:/opt/render_config.py:ro
+      - ./office:/opt/office-lib:ro
+      - ./tokens:/opt/tokens:ro
       - .:/opt/repo:ro
       - ./agents/staff-engineer/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
@@ -104,16 +110,13 @@ services:
       - HERMES_UID=${HERMES_UID:-501}
       - HERMES_GID=${HERMES_GID:-20}
       - HERMES_WRITE_SAFE_ROOT=/opt/data
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
-      - DOOR_SECRET_STAFF_ENGINEER=${DOOR_SECRET_STAFF_ENGINEER:-}
-      - DOOR_SECRET=${DOOR_SECRET_STAFF_ENGINEER:-}
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=office
+      - AGENT_ID=staff-engineer
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8752:8644"
-    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   scrum-master:
     image: nousresearch/hermes-agent:latest
@@ -125,7 +128,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/scrum-master/hermes-home:/opt/data
-      - ./agents/render_config.py:/opt/render_config.py:ro
+      - ./office:/opt/office-lib:ro
+      - ./tokens:/opt/tokens:ro
       - .:/opt/repo:ro
       - ./agents/scrum-master/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
@@ -135,16 +139,13 @@ services:
       - HERMES_UID=${HERMES_UID:-501}
       - HERMES_GID=${HERMES_GID:-20}
       - HERMES_WRITE_SAFE_ROOT=/opt/data
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
-      - DOOR_SECRET_SCRUM_MASTER=${DOOR_SECRET_SCRUM_MASTER:-}
-      - DOOR_SECRET=${DOOR_SECRET_SCRUM_MASTER:-}
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=office
+      - AGENT_ID=scrum-master
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8753:8644"
-    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
   super-devops:
     image: agent-office-agent:local
@@ -159,7 +160,8 @@ services:
         condition: service_healthy
     volumes:
       - ./agents/super-devops/hermes-home:/opt/data
-      - ./agents/render_config.py:/opt/render_config.py:ro
+      - ./office:/opt/office-lib:ro
+      - ./tokens:/opt/tokens:ro
       - .:/opt/repo:ro
       - ./agents/super-devops/skills:/opt/data/skills/agent-office:ro
       - ./crew:/opt/crew:ro
@@ -169,16 +171,13 @@ services:
       - HERMES_UID=${HERMES_UID:-501}
       - HERMES_GID=${HERMES_GID:-20}
       - HERMES_WRITE_SAFE_ROOT=/opt/data
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - CUSTOM_API_KEY=${CUSTOM_API_KEY:-}
-      - LINEAR_API_KEY=${LINEAR_API_KEY:-}
-      - OPENROUTER_API_KEY=${CUSTOM_API_KEY:-}
-      - DOOR_SECRET_SUPER_DEVOPS=${DOOR_SECRET_SUPER_DEVOPS:-}
-      - DOOR_SECRET=${DOOR_SECRET_SUPER_DEVOPS:-}
+      - TOKENS_FILE=/opt/tokens/tokens.yaml
+      - FACTORY_NAME=office
+      - AGENT_ID=super-devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8754:8644"
-    command: ["sh", "-c", "python3 /opt/render_config.py && exec hermes gateway run"]
+    command: ["python3", "/opt/office-lib/render_config.py"]
 
 networks:
   crew:

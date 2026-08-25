@@ -20,6 +20,7 @@ agent: {}
 onboarding:
   seen:
     profile_build_offered: true
+
 auxiliary:
   background_review:
     enabled: false  # factory policy: no runtime self-improvement; skills change via PR only

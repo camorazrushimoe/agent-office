@@ -28,12 +28,21 @@ inbox, and keep the **portfolio** (memory of active projects) in order.
 1. Run the collector:
 
    ```bash
-   GITHUB_TOKEN=$GITHUB_TOKEN python3 /opt/data/skills/agent-office/scrum-sweep/sweep.py --days 7
+   python3 /opt/data/skills/agent-office/scrum-sweep/sweep.py --days 7
    ```
 
-   (or `--json` for structured data). It lists the org's repos grouped by
-   activity — active (pushed in the window), quiet (open issues but no push),
-   silent — with each repo's open issues and their labels.
+   (or `--json` for structured data). **Do not** prefix it with
+   `GITHUB_TOKEN=$GITHUB_TOKEN`: Hermes deliberately strips `GITHUB_TOKEN` /
+   `GH_TOKEN` from tool subprocess environments, so that variable is always
+   empty for you. The script resolves the token itself from the factory's
+   single source of truth (`$TOKENS_FILE`, mounted read-only). If it exits with
+   "No GitHub token", the tokens file or `/opt/office-lib` is not mounted —
+   report that instead of falling back to the unauthenticated API (60 req/h,
+   public repos only), which silently gives an incomplete picture.
+
+   It lists the org's repos grouped by activity — active (pushed in the
+   window), quiet (open issues but no push), silent — with each repo's open
+   issues and their labels.
 
 2. **Read the portfolio** (memory): `/opt/data/portfolio.yaml`. It records which
    projects you already track, their stage, and their tags.

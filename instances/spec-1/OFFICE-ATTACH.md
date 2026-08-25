@@ -19,7 +19,7 @@ instances/spec-1/
 |---|---|
 | External Office Redis | `OFFICE_BUS_URL=redis://shared-memory:6379` on the `agent-office-crew` external network; no local Redis service |
 | Wake-aware send | `crew-send.py --wake` → publishes `agent.wake`, waits health, then POSTs |
-| Lifecycle controller | Office's `office/lifecycle/docker_controller.py`, `COMPOSE_PROJECT=spec-1` |
+| Lifecycle controller | Office's always-on `factory-control` service (office/lifecycle/factory_control.py) |
 | Agents controller-managed | `restart: "no"` on all agent services |
 | Team-qualified actors | envelopes use actor `spec-1/<role>` when `TEAM_NAME` is set |
 | Doors | HMAC X-Hub-Signature-256, port 8644 in-container, host-mapped below |

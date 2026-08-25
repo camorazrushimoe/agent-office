@@ -1,0 +1,19 @@
+{
+  "agents": [
+    {"id": "architect",   "container": "agent-office-architect",   "log_path": "agents/architect/hermes-home"},
+    {"id": "staff-engineer", "container": "agent-office-staff-engineer", "log_path": "agents/staff-engineer/hermes-home"},
+    {"id": "scrum-master", "container": "agent-office-scrum-master", "log_path": "agents/scrum-master/hermes-home"},
+    {"id": "super-devops", "container": "agent-office-super-devops", "log_path": "agents/super-devops/hermes-home"},
+    {"id": "lab-1-research-lead", "container": "lab-1-research-lead", "log_path": "instances/lab-1/home/research-lead"},
+    {"id": "lab-1-research-engineer", "container": "lab-1-research-engineer", "log_path": "instances/lab-1/home/research-engineer"},
+    {"id": "lab-1-evaluation", "container": "lab-1-evaluation", "log_path": "instances/lab-1/home/evaluation"},
+    {"id": "spec-1-technical-product-manager", "container": "spec-1-technical-product-manager", "log_path": "instances/spec-1/home/technical-product-manager"},
+    {"id": "spec-1-product-researcher", "container": "spec-1-product-researcher", "log_path": "instances/spec-1/home/product-researcher"},
+    {"id": "spec-1-system-domain-analyst", "container": "spec-1-system-domain-analyst", "log_path": "instances/spec-1/home/system-domain-analyst"},
+    {"id": "spec-1-adversarial-reviewer", "container": "spec-1-adversarial-reviewer", "log_path": "instances/spec-1/home/adversarial-reviewer"},
+    {"id": "dev-1-developer", "container": "dev-1-developer", "log_path": "instances/dev-1/home/developer"},
+    {"id": "dev-1-tech-pm", "container": "dev-1-tech-pm", "log_path": "instances/dev-1/home/tech-pm"},
+    {"id": "dev-1-qa", "container": "dev-1-qa", "log_path": "instances/dev-1/home/qa"},
+    {"id": "dev-1-devops", "container": "dev-1-devops", "log_path": "instances/dev-1/home/devops"}
+  ]
+}

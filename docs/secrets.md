@@ -60,6 +60,10 @@ python3 office/manage_tokens.py derive-agents
 
 # verify the file is complete and parses
 python3 office/manage_tokens.py check
+
+# install a rotated provider key without echoing it (hidden prompt, no shell history)
+python3 office/manage_tokens.py set llm.factories.office
+python3 office/manage_tokens.py set llm.factories.product-factory
 ```
 
 ## What to do when a token leaks

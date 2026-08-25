@@ -15,6 +15,11 @@ Subcommands (never print secret values):
   rotate-doors  Regenerate ONLY the door secrets (keeps llm/linear/github),
                 then remind you to run derive-agents. Use after a leak.
 
+  set <path>    Set one dotted key from a hidden prompt — the value is never
+                echoed and never lands in shell history. Use this to install a
+                rotated provider key.
+                  python3 office/manage_tokens.py set llm.factories.office
+
   derive-agents Regenerate crew/agents.json (gitignored door registry used by
                 crew/crew-send.py) from tokens.yaml doors.office.
 
@@ -38,6 +43,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 TOKENS_PATH = ROOT / "tokens" / "tokens.yaml"
 EXAMPLE_PATH = ROOT / "tokens" / "tokens.example.yaml"
+REVOKED_PATH = ROOT / "tokens" / "revoked.txt"
 AGENTS_PATH = ROOT / "crew" / "agents.json"
 
 sys.path.insert(0, str(HERE))
@@ -259,7 +265,74 @@ def cmd_rotate_doors() -> int:
     return 0
 
 
+def cmd_set(path: str) -> int:
+    """Set one dotted key from a hidden prompt (never echoed, never in history).
+
+    Example:  python3 office/manage_tokens.py set llm.factories.office
+    """
+    import getpass
+
+    if not path or "." not in path:
+        print("[manage-tokens] set: need a dotted path, e.g. "
+              "llm.factories.office / github.token / doors.office.architect",
+              file=sys.stderr)
+        return 2
+    tokens = load_tokens()
+    if not tokens:
+        print(f"[manage-tokens] set: {TOKENS_PATH.relative_to(ROOT)} not found; "
+              "run `generate` or `migrate` first", file=sys.stderr)
+        return 2
+
+    value = getpass.getpass(f"value for {path} (hidden, Enter to abort): ").strip()
+    if not value:
+        print("[manage-tokens] set: aborted (empty value)")
+        return 1
+
+    keys = path.split(".")
+    node = tokens
+    for k in keys[:-1]:
+        nxt = node.get(k)
+        if not isinstance(nxt, dict):
+            nxt = {}
+            node[k] = nxt
+        node = nxt
+    old = node.get(keys[-1]) or ""
+    node[keys[-1]] = value
+
+    bak = backup()
+    TOKENS_PATH.write_text(dump_tokens(tokens), encoding="utf-8")
+    print(f"[manage-tokens] set {path}: {mask(old)} -> {mask(value)}; "
+          f"backup: {bak.relative_to(ROOT)}")
+    print("[manage-tokens] remember to delete the backup once verified: "
+          f"rm {bak.relative_to(ROOT)}")
+    return 0
+
+
+def _walk_scalars(node, path=""):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from _walk_scalars(v, f"{path}.{k}" if path else k)
+    elif isinstance(node, str) and node:
+        yield path, node
+
+
+def load_revoked() -> dict:
+    """{sha256: description} of credentials that must never be active again."""
+    if not REVOKED_PATH.is_file():
+        return {}
+    out = {}
+    for raw in REVOKED_PATH.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 1)
+        out[parts[0].lower()] = parts[1] if len(parts) > 1 else "revoked"
+    return out
+
+
 def cmd_check() -> int:
+    import hashlib
+
     tokens = load_tokens()
     missing = []
     for instance, agents in tokens.get("doors", {}).items():
@@ -275,12 +348,28 @@ def cmd_check() -> int:
             node = node.get(k, {})
         if not node:
             missing.append(p)
+
+    # Revoked / known-leaked values must never be active again.
+    revoked = load_revoked()
+    reused = []
+    if revoked:
+        for path, value in _walk_scalars(tokens):
+            digest = hashlib.sha256(value.encode()).hexdigest()
+            if digest in revoked:
+                reused.append(f"{path} == {revoked[digest]}")
+
+    if reused:
+        print(f"[manage-tokens] check: {len(reused)} REVOKED credential(s) still "
+              f"in use — rotate now:", file=sys.stderr)
+        for r in reused:
+            print(f"  ! {r}", file=sys.stderr)
     if missing:
         print(f"[manage-tokens] check: {len(missing)} missing:", file=sys.stderr)
         for m in missing:
             print(f"  - {m}", file=sys.stderr)
+    if reused or missing:
         return 1
-    print("[manage-tokens] check: OK")
+    print("[manage-tokens] check: OK (complete, no revoked credentials in use)")
     return 0
 
 
@@ -293,6 +382,8 @@ def main() -> int:
         return cmd_generate("--force" in args)
     if cmd == "rotate-doors":
         return cmd_rotate_doors()
+    if cmd == "set":
+        return cmd_set(args[1] if len(args) > 1 else "")
     if cmd == "derive-agents":
         return cmd_derive_agents()
     if cmd == "check":

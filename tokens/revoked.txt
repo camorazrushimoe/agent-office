@@ -1,0 +1,11 @@
+# Revoked / known-leaked credentials — SHA-256 fingerprints ONLY.
+# Safe to commit: hashes cannot be reversed into the secret.
+# manage_tokens.py check FAILS if any active token matches one of these,
+# so a leaked value can never silently come back into use.
+# Format: <sha256>  <description>
+
+406345b6e375e2549ce9c4819c1b7bf925eb88a1ab005846eb8fd5c3bd324090  runinfra key leaked in PR #11 (revoked at provider)
+92c978ca4879d1621d8896e71673570e073cdd6fa04345a9fe7a7ccafcf951c9  door architect (leaked in git, rotated)
+5fbe9dd08fad5ec0003c2360bcd2743b6ecd482957963e92ee6188df89606dbc  door scrum-master (leaked in git, rotated)
+fe1ef8f6fec4f08050892fc287f7847f07358fbede2b4665ece6f0b9e42a4ab1  door staff-engineer (leaked in git, rotated)
+41c707d019a7a575d1a0d69b96cf1e6909387f5b22ac4995c5677756e30508dc  door super-devops (leaked in git, rotated)

@@ -54,7 +54,7 @@ services:
   architect:
     image: nousresearch/hermes-agent:latest
     container_name: agent-office-architect
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew]
     depends_on:
       shared-memory:
@@ -87,7 +87,7 @@ services:
       context: .
       dockerfile: Dockerfile.agent
     container_name: agent-office-staff-engineer
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew, preprod]
     depends_on:
       shared-memory:
@@ -118,7 +118,7 @@ services:
   scrum-master:
     image: nousresearch/hermes-agent:latest
     container_name: agent-office-scrum-master
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew]
     depends_on:
       shared-memory:
@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: Dockerfile.agent
     container_name: agent-office-super-devops
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew, preprod]
     depends_on:
       shared-memory:

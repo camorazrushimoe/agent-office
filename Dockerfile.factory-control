@@ -12,6 +12,6 @@ COPY office/registry/factory-agents.json /opt/registry/factory-agents.json
 
 ENV PYTHONUNBUFFERED=1 \
     FACTORY_REPO=/opt/repo \
-    FACTORY_REGISTRY=/opt/registry/factory-agents.json
+    FACTORY_REGISTRY=/opt/repo/office/registry/factory-agents.json
 
 CMD ["python3", "/app/factory_control.py"]

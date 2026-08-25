@@ -30,8 +30,7 @@ services:
         condition: service_healthy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/opt/repo:ro                       # agents' logs + office-lib (bus)
-      - ./office:/opt/office-lib:ro          # bus client lib
+      - .:/opt/repo:ro                       # agents' logs for activity signal
     environment:
       - IDLE_TIMEOUT_S=${IDLE_TIMEOUT_S:-2400}
       - CHECK_INTERVAL=${CHECK_INTERVAL:-120}

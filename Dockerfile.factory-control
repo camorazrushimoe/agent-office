@@ -1,0 +1,17 @@
+# factory-control — always-on lifecycle supervisor.
+# Manages agent container start/stop ONLY (registry allowlist).
+FROM python:3.12-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends docker.io redis-tools \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY office/lifecycle/factory_control.py /app/factory_control.py
+COPY office/registry/factory-agents.json /opt/registry/factory-agents.json
+
+ENV PYTHONUNBUFFERED=1 \
+    FACTORY_REPO=/opt/repo \
+    FACTORY_REGISTRY=/opt/repo/office/registry/factory-agents.json
+
+CMD ["python3", "/app/factory_control.py"]

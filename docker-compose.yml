@@ -16,6 +16,28 @@ name: agent-office
 # (chosen to avoid clashing with a local dev-crew on 6379 / 8651–8654)
 
 services:
+  # Always-on lifecycle supervisor: idle reaper (40m) + wake listener.
+  # The ONLY component allowed to start/stop registered agent containers.
+  factory-control:
+    build:
+      context: .
+      dockerfile: Dockerfile.factory-control
+    image: agent-office-factory-control:latest
+    container_name: agent-office-factory-control
+    restart: unless-stopped
+    depends_on:
+      shared-memory:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/opt/repo:ro                       # agents' logs for activity signal
+    environment:
+      - IDLE_TIMEOUT_S=${IDLE_TIMEOUT_S:-2400}
+      - CHECK_INTERVAL=${CHECK_INTERVAL:-120}
+      - WAKE_TIMEOUT_S=${WAKE_TIMEOUT_S:-90}
+      - OFFICE_BUS_URL=redis://shared-memory:6379
+    networks: [crew]
+
   shared-memory:
     image: redis:7-alpine
     container_name: agent-office-shared-memory
@@ -32,7 +54,7 @@ services:
   architect:
     image: nousresearch/hermes-agent:latest
     container_name: agent-office-architect
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew]
     depends_on:
       shared-memory:
@@ -65,7 +87,7 @@ services:
       context: .
       dockerfile: Dockerfile.agent
     container_name: agent-office-staff-engineer
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew, preprod]
     depends_on:
       shared-memory:
@@ -96,7 +118,7 @@ services:
   scrum-master:
     image: nousresearch/hermes-agent:latest
     container_name: agent-office-scrum-master
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew]
     depends_on:
       shared-memory:
@@ -130,7 +152,7 @@ services:
       context: .
       dockerfile: Dockerfile.agent
     container_name: agent-office-super-devops
-    restart: unless-stopped
+    restart: "no"         # factory-control owns start/stop
     networks: [crew, preprod]
     depends_on:
       shared-memory:

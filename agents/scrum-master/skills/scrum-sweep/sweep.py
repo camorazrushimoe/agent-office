@@ -174,6 +174,36 @@ def render(data: list[dict], days: int) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def resolve_token() -> str:
+    """Find a GitHub token, tolerating Hermes' subprocess hardening.
+
+    Hermes strips GITHUB_TOKEN / GH_TOKEN from tool subprocess environments
+    (tools/environments/local.py::_ALWAYS_STRIP_KEYS), so an agent running
+    this script can never inherit it — the env var only works when a human
+    runs the script on the host. Inside a factory container the token comes
+    from the single source of truth mounted at $TOKENS_FILE.
+    """
+    for var in ("GITHUB_TOKEN", "GH_TOKEN"):
+        val = os.environ.get(var, "").strip()
+        if val:
+            return val
+
+    tokens_file = os.environ.get("TOKENS_FILE", "/opt/tokens/tokens.yaml")
+    if not os.path.isfile(tokens_file):
+        return ""
+    for lib in ("/opt/office-lib", os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "..", "..", "..", "..", "office")):
+        lib = os.path.abspath(lib)
+        if os.path.isdir(lib) and lib not in sys.path:
+            sys.path.insert(0, lib)
+    try:
+        from credentials import load_tokens  # noqa: PLC0415
+        return ((load_tokens(tokens_file).get("github") or {})
+                .get("token") or "").strip()
+    except Exception:
+        return ""
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=7)
@@ -181,9 +211,11 @@ def main() -> None:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
-    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    token = resolve_token()
     if not token:
-        sys.exit("GITHUB_TOKEN not set in env")
+        sys.exit("No GitHub token: set GITHUB_TOKEN, or make sure "
+                 "$TOKENS_FILE (default /opt/tokens/tokens.yaml) has "
+                 "github.token and /opt/office-lib is mounted.")
 
     data = collect(token, args.org, args.days)
     if args.json:

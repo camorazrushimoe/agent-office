@@ -60,6 +60,10 @@ docker compose up -d
 python3 crew/publish-event.py agent.online system "office shell up"
 python3 crew/office-log.py --count 5
 python3 crew/crew-send.py scrum-master "ping: hello from host"
+
+# Foundation smoke (static → infra → bus → doors+wake). Exit 0 = foundation ok.
+python3 scripts/smoke.py
+# or: ./scripts/smoke.sh --level 2
 ```
 
 | Service | Host port |
@@ -130,6 +134,8 @@ You (via external Hermes agent)
 | [docs/mvp-scope.md](docs/mvp-scope.md) | Spec vs code |
 | [crew/OFFICE-STANDARD.md](crew/OFFICE-STANDARD.md) | Golden rules |
 | `openspec/` | Capability specs |
+| [openspec/specs/foundation-smoke/spec.md](openspec/specs/foundation-smoke/spec.md) | Foundation smoke levels |
+| `scripts/smoke.py` | Hierarchical foundation smoke CLI |
 
 ---
 

@@ -34,6 +34,9 @@ This is the meta-factory. It does not build products itself. It decides *where* 
 10. **GitHub discipline is universal**  
     Every agent, in every team, follows the same GitHub foundation rules: feature branch → PR → review → merge, never push to `main`, never self-merge. See `docs/github-workflow.md`.
 
+11. **No work starts without an intent check**  
+    Before any agent moves a Linear ticket — or a series of tickets — to `In Progress`, it MUST ask Scrum Master whether the work still serves the goal the customer actually stated, and MUST wait for the verdict. Work changes shape as it passes through hands; only Scrum Master sees the chain end to end. Scrum Master MAY **stop work and escalate** when intent cannot be established: an idle factory is cheaper than a factory building the wrong thing. Gate a series, not every ticket; the check costs minutes. See `docs/intent-alignment-gate.md`.
+
 ## What Office is responsible for
 
 - Portfolio of projects and their current stage

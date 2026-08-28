@@ -1,14 +1,20 @@
 # Foundation Sync Audit — Delta Verdict + Merge Order
 
-> **Status:** **FINAL (Architect R2, 2026-08-28).** Round 1 was executed by
-> staff-engineer from the Scrum Master's pre-verdict; Round 2 is the Architect's
-> cross-review and finalization. The DELTA VERDICT table starts from the Scrum
-> Master's pre-verdict; the **Architect finalizes** it. Where a call changes,
-> **both positions are kept visible** — disagreements are never averaged.
+> **Status:** **FINAL (Architect R2 + R3 consolidation, 2026-08-28).** Round 1
+> was executed by staff-engineer from the Scrum Master's pre-verdict; Round 2 is
+> the Architect's cross-review and finalization. The DELTA VERDICT table starts
+> from the Scrum Master's pre-verdict; the **Architect finalizes** it. Where a
+> call changes, **both positions are kept visible** — disagreements are never
+> averaged.
 > R2 changes exactly two things: (1) adds one missing inventory row
 > (SE's nested clone, §1b) with its `.gitignore` entry; (2) closes §1c — the
 > `plans/` visibility call is **ruling A (visible) confirmed**. Everything else
 > in R1 is **adopted as-is** (see §4 Architect cross-review record).
+> R3 (consolidation): a second, parallel SE draft (PR #24, since closed)
+> disagreed on `plans/` (position B) and reordered #22 earlier. Both positions
+> are recorded in §5; the ruling stands at **A**. #24's genuinely additive
+> content (follow-ups F1–F4) is adopted into §6. **This PR (#25) is the single
+> surviving sync-audit PR** — #23 and #24 are closed as duplicates (§5).
 >
 > **Scope (foundation only):** `.gitignore`, this `docs/` file, the sync-audit
 > PR, and PR comments on #19/#20/#21/#22. **Nothing is merged here.** The human
@@ -142,7 +148,7 @@ local artifact deserves promotion.** That is a valid result; padding is not.
 
 ```
 #19  spec/office-mcp                       →  GO          (first)
-#23  foundation/sync-audit-r1  (this PR)    →  GO          (second)
+#25  sync-audit-r2  (this PR)               →  GO          (second)
 #20  foundation/intent-alignment-gate      →  NEEDS-CHANGES (after its 3 blocking fixes)
 #21  fix/lab-1-crew-send-missing           →  NEEDS-CHANGES (after rebase onto fresh main + client fix)
 #22  review/architect-pr19-21              →  GO (records) (last)
@@ -154,7 +160,7 @@ local artifact deserves promotion.** That is a valid result; padding is not.
    non-blocking N1–N6; grok triage "merge"). Self-contained (README,
    docs/office-mcp.md, openspec/*). Merging it clears the cleanest win and
    moves `main` forward so the stacked work re-bases against less.
-2. **#23 (this PR) second.** Docs + `.gitignore` only, **zero code**, no
+2. **#25 (this PR) second.** Docs + `.gitignore` only, **zero code**, no
    dependency on any other branch. Merging it early (a) lands the
    delta-verdict doc as the **shared reference** for the subsequent #20/#21
    reviews, and (b) stops runtime state from polluting `git status` while the
@@ -187,19 +193,19 @@ local artifact deserves promotion.** That is a valid result; padding is not.
 File-set per PR (after #21 rebase), from `git diff --name-only main...branch`:
 
 - #19: `README.md`, `docs/office-mcp.md`, `openspec/changes/add-office-mcp/*`, `openspec/specs/office-mcp/spec.md`
-- #23: `.gitignore`, `docs/foundation-sync-plan.md`
+- #25: `.gitignore`, `docs/foundation-sync-plan.md`
 - #20: `agents/scrum-master/skills/intent-alignment-gate/SKILL.md`, `crew/OFFICE-STANDARD.md`, `docs/intent-alignment-gate.md`
 - #21 (rebased): `instances/lab-1/crew/crew-send.py`
 - #22: `instances/reviews/architect-pr19.md`, `architect-pr20.md`, `architect-pr21.md`
 
 **No file is touched by more than one PR** in the post-rebase file-sets.
-`.gitignore` is touched **only by #23**. Therefore **static conflict risk is
+`.gitignore` is touched **only by #25**. Therefore **static conflict risk is
 zero** for any merge order; the only *ordering* constraints are the
 **stacking dependency** (#21 ⇒ #20) and the **records semantics** (#22 last).
 
 **Simulation (actual git, `git 2.47.3`):** in a throwaway worktree,
 `git checkout -B sim/main origin/main` then, in order,
-`git merge --no-ff --no-edit` of `#19`, `#23`, `#20` (its current branch as
+`git merge --no-ff --no-edit` of `#19`, `#25` (the current R1+R2 branch as
 proxy for the post-fix #20), then `git rebase sim/main` of `#21` (leaves
 exactly **1 commit**, 1 file, no conflicts), then merge rebased `#21`, then
 merge `#22`. **All six operations exited 0 with zero conflicts.** Final graph
@@ -216,7 +222,7 @@ is a clean linear-of-merges off `a748498`.
 | PR | Verdict | Gate to flip to GO |
 |----|---------|--------------------|
 | #19 | **GO** | — (architect APPROVE, 0 blocking). Optional: address non-blocking N1–N6. |
-| #23 | **GO** | — (this PR; docs + .gitignore only). |
+| #25 | **GO** | — (this PR; docs + .gitignore only). |
 | #20 | **NEEDS-CHANGES** | Fix **B1** (SM-container-runnable commands via `/opt/crew/office-log.py` + `publish-event.py`), **B2** (update `openspec/specs/agent-roles`), **B3** (timeout/escalation when customer absent; define whether SM gates its own tickets). |
 | #21 | **NEEDS-CHANGES** | **Rebase** onto post-#20 `main` (removes the #20 payload from the diff), and ship the **canonical office client + ro-mount** (not the weaker lab-crew variant). |
 | #22 | **GO (records, merge last)** | None (records only). Note: sole review is a grok triage re-check; low risk. Merge after #19/#20/#21 resolve. |
@@ -278,6 +284,68 @@ the Architect **independently re-verified in R2** (not taken on trust from R1):
 **Adoption:** the R1 delta verdict (§1) and merge order (§2) are adopted as
 final, subject to the two changes above. No R3 is required for this PR;
 rounds 1–2 are sufficient and both ended in committed artifacts.
+
+---
+
+## 5. R3 consolidation — the three-PR race and the surviving ruling
+
+**What happened (timeline, UTC):** while the Architect was executing R2
+(cross-review on `foundation/sync-audit-r1`), staff-engineer opened **two**
+sync-audit PRs in parallel: **#23** (his R1 branch, opened 08:05) and **#24**
+(a second, more concise draft, opened 08:13). The Architect opened **#25**
+(the R1+R2 branch) at 08:18. For 45 minutes the office therefore carried
+**three overlapping sync-audit PRs** — a coordination race this audit exists
+to prevent. As lead, the Architect consolidated to **one**:
+
+| PR | Branch | Fate | Reason |
+|---|---|---|---|
+| #23 | `foundation/sync-audit-r1` | **CLOSED (duplicate of #25)** | R1 superset is fully contained in #25 (R2 builds directly on it; every R1 line is present in #25's tree). |
+| #24 | `foundation/foundation-sync-audit` | **CLOSED (superseded by #25)** | Disagreed on §1c (position B: ignore `plans/` — overruled, rationale in §1c) and mis-stated the baseline ("0 review comments" — false per §4.3). Its additive content (F1–F4) is adopted in §6; its `.gitignore`/doc are not merged. |
+| **#25** | `sync-audit-r2` | **SURVIVES** | Superset: R1 + R2 cross-review + nested-clone entry + F1–F4. |
+
+**Disagreement, kept visible (never averaged):**
+
+- **`plans/` visibility** — SE's #24 shipped **position B** (gitignore
+  `agents/*/hermes-home/plans/`); the SM pre-verdict, R1, and the Architect's
+  R2 ruling all hold **position A** (visible). Ruling **A**, rationale in §1c.
+  A one-line diff, but it encodes the audit's whole purpose: the `fam-*`
+  cluster was caught *because* it was visible in `git status`.
+- **Merge-order position of #22** — SE's #24 placed #22 third (before the
+  fixed #20/#21); R1/#25 place it last. Ruling: **last** (§2a). The records
+  describe the resolved state of #19/#20/#21; landing them before the fixes
+  make those three files stale on `main` for the window in which the fixes
+  land. No conflict either way (disjoint files) — organizational call only.
+- **Process note (for the human, not a style point):** the same joint task
+  produced three near-identical PRs because both agents interpreted "open
+  ONE PR" against their own in-flight draft. The durable fix is the round
+  budget the Scrum Master enforces plus this consolidation rule: *when the
+  same audit yields multiple PRs, the lead consolidates to one and closes the
+  rest as duplicates with reasons* — done here, and recorded so the next
+  audit inherits the rule.
+
+---
+
+## 6. Follow-ups (tracked, not fixed in this PR — adopted from SE's #24 draft)
+
+- **F1 — Linear tooling gap.** No committed, generic Office tool for Linear
+  project + ticket creation; `fam-linear-create.py` is a one-off prototype.
+  Candidate foundation ticket (post-audit): a real tool (e.g.
+  `office/linear.py` reusing `office/credentials.py parse_tokens`) plus
+  documented API quirks (description ≤ 255 chars; no project `identifier`
+  field; no `blockedByIssueIds` in `IssueUpdateInput` — blocking edges go in
+  the ticket body). **Not part of this PR** — this PR lands the verdict, not
+  the follow-up build.
+- **F2 — factory-dashboard skill unreliable.** SM's `audit.finding` on the
+  bus: stale container-name list (reported 0 running / 16 sleeping while 9
+  were up). Owner: Architect + Staff Engineer. Verify via bus events or a
+  door TCP probe until fixed.
+- **F3 — Russian-language sweep report.** `sweep-report.md` / `scrum-sweep`
+  output is in Russian against the Office standard "Work in English."
+  One-line skill fix.
+- **F4 — door-client unification (#21 B2 follow-up).** After #21, reconcile
+  the three divergent `crew-send.py` copies (office, lab-crew, dev-crew) to
+  one canonical client + shared read-only mount; apply to dev-1/spec-1
+  (same latent gap). One ticket.
 
 ---
 

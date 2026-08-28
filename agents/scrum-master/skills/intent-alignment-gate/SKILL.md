@@ -44,8 +44,10 @@ Get all four levels. If you cannot find one, that is itself a finding.
 
 ```bash
 # bus history for this project
-docker exec agent-office-shared-memory redis-cli XREVRANGE office:events + - COUNT 50
+python3 /opt/crew/office-log.py --count 50 --project "<project>"
 ```
+
+One-shot mode, talks TCP to `OFFICE_BUS_URL` — no docker needed. `--project` and `--team` filters exist; your container has `OFFICE_BUS_URL=redis://shared-memory:6379` set.
 
 ### 2. Ask the four questions
 
@@ -87,8 +89,7 @@ When you stop work:
 3. Publish to the bus so the stop is not silent:
 
    ```bash
-   cd ~/agent-office
-   python3 crew/publish-event.py work.gate.blocked scrum-master \
+   python3 /opt/crew/publish-event.py work.gate.blocked scrum-master \
      "BON-35..39 blocked: cannot establish that Phase 0 serves the stated goal" \
      --target lab-1 --project "<project>"
    ```
@@ -117,14 +118,16 @@ MEANWHILE
   what is paused, and what (if anything) safely continues
 ```
 
-Then **wait**. Do not iterate on the plan while blocked — that is how a stop turns into a loop.
+Then **wait**. Do not iterate on the plan while blocked — that is how a stop turns into a loop. And a stop must never be a parking lot.
+
+**Timeouts and unblock path.** If the customer has not answered within **24 hours** (default window), re-escalate to the **human operator** with the same shape — recommendation plus an explicit "proceed or cancel" question — and publish `work.gate.escalated` so the wait is auditable. You also gate **your own Office tickets**: record the verdict on the ticket/PR and publish `work.gate.passed`; the guardrails (bias to release, no double-gating) apply with full force.
 
 Ask for the goal in business terms, never for a technical spec. "What decision will this let you make?" and "what would make this a waste of money?" are the two questions that recover intent fastest.
 
 ## Passing the gate
 
 ```bash
-python3 crew/publish-event.py work.gate.passed scrum-master \
+python3 /opt/crew/publish-event.py work.gate.passed scrum-master \
   "BON-35..39 aligned: verifies the corpora before research spend; serves 'do we have usable data'" \
   --target lab-1 --project "<project>"
 ```

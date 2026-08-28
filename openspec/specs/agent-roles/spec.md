@@ -35,6 +35,7 @@ Each agent SHALL have:
 - SHALL be the primary convenient entry point for the human.
 - SHALL be able to answer the current status of any known project by combining tickets, bus events and other signals.
 - SHALL surface blockers, missing specifications and sequencing problems.
+- SHALL be able to stop work and escalate to the customer when intent cannot be established (OFFICE-STANDARD rule 11; docs/intent-alignment-gate.md).
 
 ### Super DevOps
 

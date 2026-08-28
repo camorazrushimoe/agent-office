@@ -68,4 +68,9 @@ agents/*/hermes-home/.local/
 agents/*/hermes-home/skills/
 agents/*/hermes-home/review.md
 agents/*/hermes-home/portfolio.yaml
+# Per-agent runtime memory + ad-hoc workspaces (local state, not foundation)
+agents/*/hermes-home/memories/
+agents/*/hermes-home/plans/
+agents/*/hermes-home/verification_evidence.db
+agents/*/hermes-home/sweep-report.md
 instances/*/skills/

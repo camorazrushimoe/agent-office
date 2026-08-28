@@ -69,3 +69,20 @@ agents/*/hermes-home/skills/
 agents/*/hermes-home/review.md
 agents/*/hermes-home/portfolio.yaml
 instances/*/skills/
+
+# Per-agent runtime memory (regrows every session; repo convention is to
+# commit SOUL/config.template/skills, not runtime state — see
+# docs/foundation-sync-plan.md, delta verdict)
+agents/*/hermes-home/memories/
+
+# Regenerable skill output (scrum-sweep sweep.py; the skill itself is tracked
+# at agents/<role>/skills/)
+agents/*/hermes-home/sweep-report.md
+
+# Runtime sqlite state (same class as the already-ignored response_store.db*/state.db*)
+agents/*/hermes-home/verification_evidence.db
+
+# NOTE: agents/*/hermes-home/plans/ is deliberately NOT ignored. A recurring
+# untracked plans/ dir is a signal the next sync audit should see, not noise
+# (docs/foundation-sync-plan.md — decision by staff-engineer, open to
+# cross-review challenge).

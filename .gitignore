@@ -89,5 +89,5 @@ agents/staff-engineer/hermes-home/agent-office/
 
 # NOTE: agents/*/hermes-home/plans/ is deliberately NOT ignored. A recurring
 # untracked plans/ dir is a signal the next sync audit should see, not noise
-# (docs/foundation-sync-plan.md — decision by staff-engineer, open to
-# cross-review challenge).
+# (docs/foundation-sync-plan.md §1c — R2 ruling: Position A confirmed by the
+# Architect; final).

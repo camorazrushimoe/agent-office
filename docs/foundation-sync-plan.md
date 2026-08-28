@@ -56,16 +56,20 @@ adversarial review + architect verdict + grok triage); #22 carries **1**
 ## 1. Delta verdict (local vs GitHub)
 
 The human's suspicion: the local machine holds factory enhancements diverged
-from GitHub. Inventory = 11 `fam-*.py` one-shot scripts (Scrum Master,
-2026-08-27 15:19–15:22 UTC, during Federated Agent Memory intake; run from the
-SM container where `/opt/repo` is ro-mounted; **nothing committed**), plus other
-untracked runtime artifacts.
+from GitHub. Inventory = 12 one-shot scripts in
+`agents/scrum-master/hermes-home/plans/`: the 11 `fam-*.py` (Scrum Master,
+2026-08-27 15:19–15:22 UTC, during the Federated Agent Memory intake) **plus**
+`audit-r1-dispatch.py` (Scrum Master, 2026-08-28 07:55 UTC — this audit's own
+R1 bus-event + door dispatch, created after the human's inventory and caught by
+the Architect in R2; same class: **DISCARD**). All ran from the SM container
+where `/opt/repo` is ro-mounted; **nothing committed**. Plus other untracked
+runtime artifacts.
 
 Verdicts below start from the **Scrum Master pre-verdict**. Column "Changed?"
 marks any deviation (none in R1; architect may change in R2/R3 — both
 positions will then be kept).
 
-### 1a. The `fam-*` cluster (11 files, `agents/scrum-master/hermes-home/plans/`)
+### 1a. The `fam-*` cluster + audit dispatch (12 files, `agents/scrum-master/hermes-home/plans/`)
 
 | # | File | Verdict | One-line reason |
 |---|------|---------|-----------------|
@@ -80,6 +84,7 @@ positions will then be kept).
 | 9 | `fam-verify.py` | **DISCARD** | One-shot post-creation existence check. |
 | 10 | `fam-bus-events.py` | **DISCARD** | One-shot publisher of the 4 intake bus envelopes via a hand-rolled RESP2 XADD client; the durable pattern is the committed office bus tooling, not this raw client. |
 | 11 | `fam-dispatch.py` | **DISCARD** | One-shot HMAC dispatcher to lab-1 doors; the durable pattern is the committed `crew/crew-send.py` — a raw one-shot would duplicate it. |
+| 12 | `audit-r1-dispatch.py` | **DISCARD** | This audit's own R1 dispatch (bus `audit.foundation_sync.started` + HMAC door briefs, 2026-08-28 07:55). One-shot by design; the 12th untracked file the Architect caught in R2. |
 
 **Cluster rationale (SM pre-verdict, unchanged in R1):** these are one-shot
 intake scripts that already ran. The durable pattern is
@@ -261,7 +266,7 @@ the Architect **independently re-verified in R2** (not taken on trust from R1):
    clone** of this repo. Verified: HEAD `a748498` == `origin/main`, 0/0
    ahead-behind, working tree clean → **IGNORE** (runtime scaffolding, now
    gitignored, §1b). No other nested clones under any `hermes-home`.
-5. **`fam-*` cluster** — read all 11 files end-to-end. R1's DISCARD-all holds:
+5. **`fam-*` cluster** — read all 12 scripts end-to-end (11 `fam-*` + this audit's `audit-r1-dispatch.py`). R1's DISCARD-all holds:
    one-shot intake tooling for the Federated Agent Memory commission with
    hard-coded host paths (`/opt/repo`, `/opt/tokens`), Linear project/ticket
    ids, and the commission's expected numbers embedded in dispatch prose.

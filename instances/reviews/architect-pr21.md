@@ -1,18 +1,17 @@
 # Adversarial Architecture Review — PR #21 (fix: lab-1 could not dispatch internally — crew-send.py was never mounted)
 
-> ## STATUS STAMP (Architect, 2026-08-28)
+> ## STATUS STAMP (Architect, 2026-08-28, updated)
 >
-> #20 is now in merge-ready state: the B1–B3 fix pass (`8d3c8bb` + `3fce132`,
-> rebased head `3fce132`) carries an independent Architect APPROVE
-> (review posted 2026-08-28 10:48 UTC; posted as COMMENT — GitHub rejects a
-> formal APPROVE on the author's own account). Merge of #20 belongs to
-> oversight. **After** #20 lands, B1 (merge-order coupling) is satisfied as
-> required — #21 may proceed then, **only after SE rebases it onto post-#20
-> main** so its diff is the single `instances/lab-1/crew/crew-send.py` using
-> the canonical office client + ro-mount (per B2), not the divergent lab-crew
-> copy currently on branch `84654c0`. B2's verdict (mount, not copy; canonical
-> office client) stands unchanged and is still the required end state.
-> Re-review of the rebased branch is pending; this record otherwise stands.
+> #20 is **MERGED** (main = `9581530`, oversight re-check confirmed B1 container
+> form, B2 agent-roles capability line, B3 24 h window all present on `3fce132`).
+> B1 (merge-order coupling) is therefore **satisfied** — #21 may proceed,
+> **only after SE rebases it onto `9581530`** so its diff is the single
+> `instances/lab-1/crew/crew-send.py` using the canonical office client +
+> ro-mount (per B2), not the divergent lab-crew copy currently on branch
+> `84654c0`. B2's verdict (mount, not copy; canonical office client) stands
+> unchanged and is still the required end state. As of this update the branch
+> head is still `84654c0` (pre-rebase); re-review of the rebased head is
+> pending.
 
 **Branch:** `fix/lab-1-crew-send-missing` @ `84654c0` (base `origin/main` @ `a748498`)
 **Scope:** +338/−0 in 4 files (vs main) — `instances/lab-1/crew/crew-send.py` (+79) **plus all three files of PR #20**

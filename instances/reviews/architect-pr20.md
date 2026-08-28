@@ -21,6 +21,9 @@
 >   (`work.gate.escalated`) + defined SM self-gating, in both the doc and the
 >   SKILL. The "silent stalemate / parking lot" deadlock mode is closed.
 >
+> **MERGED** to main as `9581530` (2026-08-28, oversight; re-check confirmed
+> B1 container form, B2 capability line, B3 24 h window present on `3fce132`).
+>
 > **Current verdict: APPROVE** — posted as the Architect review on head
 > `3fce132967432e1c908880250c9b1aa9e8dc0f63` (2026-08-28 10:48 UTC).
 >

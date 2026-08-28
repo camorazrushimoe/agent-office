@@ -23,10 +23,10 @@ separate template repos and are instantiated as many times as you need:
   Idea / GitHub repo
         │
         ▼
-   ┌─────────────┐     Research       ┌──────────────────┐     Product        ┌─────────────┐
+   ┌─────────────┐     Research       ┌─────────────────┐     Product        ┌────────────┐
    │  Lab team   │ ──── Package ────▶ │  Spec team        │ ──── Spec ───────▶ │  Dev team   │
    │ (lab-crew)  │                    │ (product-factory) │                    │ (dev-crew)  │
-   └─────────────┘                    └──────────────────┘                    └──────┬──────┘
+   └─────────────┘                    └─────────────────┘                    └──────┘
                                                                                     │ PR → review → merge → deploy
                                                                                     ▼
                                                                            shared pre-prod (Super DevOps)
@@ -35,7 +35,9 @@ separate template repos and are instantiated as many times as you need:
 The **Office agents** (Architect, Staff Engineer, Scrum Master, Super DevOps)
 sit above this: they route work between teams, keep the portfolio coherent, and
 own the shared pre-prod gate. The **human** talks to the Office through an
-external Hermes agent; Scrum Master is the recommended entry point.
+external Hermes/Grok agent over **Office MCP** (planned always-on service on
+host port **8760**). Scrum Master is the recommended entry point; any agent is
+addressable. See [`docs/office-mcp.md`](docs/office-mcp.md).
 
 **Foundation (applies to every team):**
 
@@ -70,6 +72,7 @@ python3 scripts/smoke.py
 | Service | Host port |
 |---------|-----------|
 | Redis bus | **6380** |
+| office-mcp (spec, not running yet) | **8760** |
 | architect | 8751 |
 | staff-engineer | 8752 |
 | scrum-master | 8753 |
@@ -84,14 +87,14 @@ Full path: [docs/deploy.md](docs/deploy.md).
 ## Core idea
 
 ```
-You (via external Hermes agent)
+You (via external Hermes/Grok agent + Office MCP)
         │
         ▼
-┌─────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────┐
 │                     Agent Office                            │
 │  Architect · Staff Engineer · Scrum Master · Super DevOps   │
-│  · shared Redis bus · shared pre-prod network               │
-└─────────────────────────────────────────────────────────────┘
+│  · shared Redis bus · Office MCP · shared pre-prod          │
+└────────────────────────────────────────────────────────────┘
         │
         ├── Lab instances   (lab-crew template)       → research
         ├── Spec instances  (product-factory template) → product specs
@@ -108,11 +111,12 @@ You (via external Hermes agent)
 | Multi-repo | Office shell + team templates |
 | Composition | N× Lab + K× Spec + M× Dev from pinned template refs |
 | Bus | Single Redis at Office (host **6380** in default compose) |
+| External facade | Office MCP (always-on with compose; host **8760**) |
 | Pre-prod | Shared network `agent-office-preprod`, global promotion lock |
 | Work tracking | Linear (Projects + tickets); GitHub for code (PR + review) |
 | Office agents | Always-on in v1 |
 | Team agents | Idle ~40m + wake-on-demand (implemented in team templates) |
-| Human entry | Scrum Master (any-to-any allowed) |
+| Human entry | Scrum Master via MCP (any-to-any allowed) |
 
 ---
 
@@ -123,6 +127,7 @@ You (via external Hermes agent)
 | [HANDOFF-DEVOPS.md](HANDOFF-DEVOPS.md) | **Give this to DevOps** |
 | [docs/deploy.md](docs/deploy.md) | Deploy guide |
 | [docs/secrets.md](docs/secrets.md) | **Secrets single-source + rotation runbook** |
+| [docs/office-mcp.md](docs/office-mcp.md) | **External MCP facade** (spec; runtime follow-up) |
 | [docs/composition.md](docs/composition.md) | Multi-repo composition |
 | [docs/architecture.md](docs/architecture.md) | System architecture |
 | [docs/roles.md](docs/roles.md) | Roles |
@@ -136,6 +141,7 @@ You (via external Hermes agent)
 | [docs/mvp-scope.md](docs/mvp-scope.md) | Spec vs code |
 | [crew/OFFICE-STANDARD.md](crew/OFFICE-STANDARD.md) | Golden rules |
 | `openspec/` | Capability specs |
+| [openspec/specs/office-mcp/spec.md](openspec/specs/office-mcp/spec.md) | Office MCP capability |
 | [openspec/specs/foundation-smoke/spec.md](openspec/specs/foundation-smoke/spec.md) | Foundation smoke levels |
 | `scripts/smoke.py` | Hierarchical foundation smoke CLI |
 
@@ -147,5 +153,8 @@ You (via external Hermes agent)
 each spawned from its template with role skills, SOULs, GitHub/Linear foundation,
 and doors on the shared bus. Team lifecycle (idle stop / wake) and the
 deterministic Linear completion watcher are the remaining wiring.
+
+Office MCP is specified (`docs/office-mcp.md`, issue #18); the compose service
+is not running yet.
 
 See also: [lab-crew](https://github.com/camorazrushimoe/lab-crew) · [product-factory](https://github.com/camorazrushimoe/product-factory) · [dev-crew](https://github.com/camorazrushimoe/dev-crew)

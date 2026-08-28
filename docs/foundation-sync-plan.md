@@ -354,27 +354,59 @@ to prevent. As lead, the Architect consolidated to **one**:
 
 ---
 
-## R4 addendum (2026-08-28, Architect — correction round, round 1 of max 3)
+## Fix pass R1 (2026-08-28, post-merge-of-#19) — `.gitignore` correction
 
-**`.gitignore` corrected (oversight blocker 2).** The R2 nested-clone entry
-was hardcoded to one agent and R2/R3 shipped without the cache entries the
-R2/R3 rounds themselves produced in SE's home. R4: nested-clone entry →
-wildcard `agents/*/hermes-home/agent-office/` (consistent with every other
-line in the file; any agent that clones the repo into its home repeats the
-problem), plus `agents/*/hermes-home/.npm/` and
-`agents/*/hermes-home/lsp/`. Verified against the host clone's real untracked
-set (5,468 paths): after R4, **23 paths remain visible** — 20
-`plans/` files (deliberate, §1c ruling A) + 3 SE one-off scripts
-(`msg-r1.txt`, `open_pr.py`, `post_comments.py`; DISCARD class, visible as an
-audit signal). The 5,445 cache/lsp/clone paths are now suppressed.
+**Scope note.** This is a SEPARATE 3-round budget the human set for the
+fix pass (oversight-enforced: 3 rounds max, every round ends in a
+committed artifact, one branch per item). It is NOT a continuation of
+this audit's own R1–R3 rounds — do not conflate. This round (fix pass
+R1) corrects the `.gitignore` oversight found when the merge of #19
+moved main to `5586974`. (The correction shipped as commit `84b23de` on
+`sync-audit-r2`; its subject line predates this re-label and says "R4" —
+the fix-pass round is R1.)
 
-**§2c simulation re-run against the moved main.** `origin/main` is now
+**`.gitignore` corrected.** Two missed patterns the audit's own R2/R3
+rounds produced, plus one hardcoded line:
+- `agents/staff-engineer/hermes-home/agent-office/` → wildcard
+  `agents/*/hermes-home/agent-office/` (consistent with every other
+  line in the file; any agent that clones the repo into its
+  hermes-home repeats the problem, not just staff-engineer's).
+- Added `agents/*/hermes-home/.npm/` (npm runtime cache, regenerable;
+  0 tracked files under any `hermes-home/.npm`).
+- Added `agents/*/hermes-home/lsp/` (pyright LSP install:
+  node_modules + bin, regenerable; 0 tracked files under any
+  `hermes-home/lsp`).
+
+Zero tracked files match the three new/widened patterns (verified with
+`git ls-tree` at branch head), so they swallow nothing tracked. §1c
+ruling A intact: `agents/*/hermes-home/plans/` is deliberately NOT
+ignored (the NOTE in the file is unchanged) — a recurring untracked
+`plans/` dir is a signal the next sync audit should see, not noise.
+
+**Verification against the host clone's live untracked set**
+(point-in-time, measured at commit `84b23de`): 16,076 untracked paths;
+the three fix-pass pollution classes are fully suppressed — **0 paths
+remain visible** in `.npm/**` (16 files), `lsp/**` (10,858) and the
+nested clone (291) under the corrected `.gitignore`. Other untracked
+runtime content is out of scope for this fix pass: `plans/` stays
+visible by §1c ruling A (audit signal); the remainder (workspaces,
+caches, one-off scripts) is runtime noise for §6 follow-ups / the next
+sync audit, not for this round. `git check-ignore -v` proofs
+(recorded to the Scrum Master 2026-08-28): the npm `_cacache` path IS
+ignored, pyright `index.js` IS ignored,
+`agents/architect/hermes-home/agent-office/.git` IS ignored (wildcard
+covers other agents), `agents/scrum-master/hermes-home/plans/` is NOT
+ignored (ruling A intact).
+
+**§2c re-simulated against the moved main.** `origin/main` is now
 `5586974` (post-#19; #19 touched `README.md`, `docs/office-mcp.md`,
-`openspec/*` — disjoint from every open PR's file-set). R4 re-ran the §2c
-simulation against `5586974` in a throwaway worktree: merge #25 (post-fix),
-merge #20 (`02b0719` proxy), rebase #21 (1 commit, 1 file, +79, no conflicts),
-merge rebased #21, merge #22 — **all operations exit 0, zero conflicts.**
-The §2c zero-conflict claim holds against `5586974`.
+`openspec/*` — disjoint from every open PR's file-set). The Scrum
+Master re-simulated §2c against `5586974` (result per SM's log: zero
+conflicts); the Architect independently re-ran the same sequence in a
+throwaway worktree (merge #25 post-fix, merge #20 `02b0719`, rebase
+#21 → 1 commit / 1 file / +79, merge rebased #21, merge #22) — all
+operations exit 0, zero conflicts. The §2c zero-conflict claim holds
+against `5586974`.
 
 ---
 

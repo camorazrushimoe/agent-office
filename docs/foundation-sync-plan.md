@@ -354,6 +354,30 @@ to prevent. As lead, the Architect consolidated to **one**:
 
 ---
 
+## R4 addendum (2026-08-28, Architect — correction round, round 1 of max 3)
+
+**`.gitignore` corrected (oversight blocker 2).** The R2 nested-clone entry
+was hardcoded to one agent and R2/R3 shipped without the cache entries the
+R2/R3 rounds themselves produced in SE's home. R4: nested-clone entry →
+wildcard `agents/*/hermes-home/agent-office/` (consistent with every other
+line in the file; any agent that clones the repo into its home repeats the
+problem), plus `agents/*/hermes-home/.npm/` and
+`agents/*/hermes-home/lsp/`. Verified against the host clone's real untracked
+set (5,468 paths): after R4, **23 paths remain visible** — 20
+`plans/` files (deliberate, §1c ruling A) + 3 SE one-off scripts
+(`msg-r1.txt`, `open_pr.py`, `post_comments.py`; DISCARD class, visible as an
+audit signal). The 5,445 cache/lsp/clone paths are now suppressed.
+
+**§2c simulation re-run against the moved main.** `origin/main` is now
+`5586974` (post-#19; #19 touched `README.md`, `docs/office-mcp.md`,
+`openspec/*` — disjoint from every open PR's file-set). R4 re-ran the §2c
+simulation against `5586974` in a throwaway worktree: merge #25 (post-fix),
+merge #20 (`02b0719` proxy), rebase #21 (1 commit, 1 file, +79, no conflicts),
+merge rebased #21, merge #22 — **all operations exit 0, zero conflicts.**
+The §2c zero-conflict claim holds against `5586974`.
+
+---
+
 *Prepared by staff-engineer (R1) from the Scrum Master pre-verdict + verified
 git/GitHub evidence; finalized by the Architect (R2) per §4. Cross-review
 conducted as PR comments on this PR and on #19/#20/#21/#22.*

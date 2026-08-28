@@ -82,10 +82,17 @@ agents/*/hermes-home/sweep-report.md
 # Runtime sqlite state (same class as the already-ignored response_store.db*/state.db*)
 agents/*/hermes-home/verification_evidence.db
 
-# Nested repo clone in a runtime home (staff-engineer's, added by Architect R2:
-# verified clean @ origin/main, 0/0 ahead-behind — runtime scaffolding, not a
-# divergence. Do not let a live second clone live silently inside hermes-home.)
-agents/staff-engineer/hermes-home/agent-office/
+# Runtime npm cache (regenerable; npm installs inside a hermes-home)
+agents/*/hermes-home/.npm/
+
+# Runtime LSP install (pyright via npm: node_modules + bin, regenerable)
+agents/*/hermes-home/lsp/
+
+# Nested repo clone in a runtime home (added by Architect R2; R4: wildcard —
+# any agent that clones the repo into its own home repeats the problem, not
+# just staff-engineer. SE's clone verified clean @ origin/main, 0/0
+# ahead-behind: runtime scaffolding, not a divergence.)
+agents/*/hermes-home/agent-office/
 
 # NOTE: agents/*/hermes-home/plans/ is deliberately NOT ignored. A recurring
 # untracked plans/ dir is a signal the next sync audit should see, not noise

@@ -1,5 +1,37 @@
 # Adversarial Architecture Review — PR #20 (foundation: intent alignment gate)
 
+> ## ⚠️ CORRECTION (Architect, 2026-08-28) — verdict below is SUPERSEDED
+>
+> The review body below is a point-in-time snapshot of `02b0719` (pre-rebase). It
+> remains valid as the audit trail of what was found, but **all three blocking
+> items have been fixed and independently re-verified** on the rebased head
+> `3fce132` (fix pass `8d3c8bb` + `3fce132`, base `main` @ `5586974`):
+>
+> - **B1 resolved** — SKILL.md ships only container-runnable commands
+>   (`python3 /opt/crew/office-log.py --count 50 --project …`,
+>   `python3 /opt/crew/publish-event.py … --target …`); no docker, no
+>   `~/agent-office`. Verified against the SM compose volumes
+>   (`./crew:/opt/crew:ro`, `OFFICE_BUS_URL=redis://shared-memory:6379`) and the
+>   actual script CLIs.
+> - **B2 resolved** — `openspec/specs/agent-roles/spec.md` Scrum Master section
+>   carries the stop-authority line; `openspec/changes/add-intent-alignment-gate/`
+>   (proposal + delta + tasks) exists, delta format matches repo convention and
+>   its requirement bullets are identical to the live spec section.
+> - **B3 resolved** — 24 h re-escalation window to the human operator
+>   (`work.gate.escalated`) + defined SM self-gating, in both the doc and the
+>   SKILL. The "silent stalemate / parking lot" deadlock mode is closed.
+>
+> **Current verdict: APPROVE** — posted as the Architect review on head
+> `3fce132967432e1c908880250c9b1aa9e8dc0f63` (2026-08-28 10:48 UTC).
+>
+> Non-blocking notes still open at approval (tracked, not gating):
+> N1 (team-factory template inheritance — doc checklist + `tasks.md` 4.2),
+> N2 (`work.gate.*` events not yet in `docs/observability.md`'s catalog),
+> N3 (Russian trigger phrases in SKILL description), N4 (Linear runtime
+> signalling vs. gate trigger wording).
+>
+> ---
+
 **Branch:** `foundation/intent-alignment-gate` @ `02b0719` (base `origin/main` @ `a748498`)
 **Scope:** +259/−0 in 3 files — `agents/scrum-master/skills/intent-alignment-gate/SKILL.md`,
 `docs/intent-alignment-gate.md`, `crew/OFFICE-STANDARD.md` (+3)

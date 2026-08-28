@@ -1,5 +1,19 @@
 # Adversarial Architecture Review — PR #21 (fix: lab-1 could not dispatch internally — crew-send.py was never mounted)
 
+> ## STATUS STAMP (Architect, 2026-08-28)
+>
+> #20 is now in merge-ready state: the B1–B3 fix pass (`8d3c8bb` + `3fce132`,
+> rebased head `3fce132`) carries an independent Architect APPROVE
+> (review posted 2026-08-28 10:48 UTC; posted as COMMENT — GitHub rejects a
+> formal APPROVE on the author's own account). Merge of #20 belongs to
+> oversight. **After** #20 lands, B1 (merge-order coupling) is satisfied as
+> required — #21 may proceed then, **only after SE rebases it onto post-#20
+> main** so its diff is the single `instances/lab-1/crew/crew-send.py` using
+> the canonical office client + ro-mount (per B2), not the divergent lab-crew
+> copy currently on branch `84654c0`. B2's verdict (mount, not copy; canonical
+> office client) stands unchanged and is still the required end state.
+> Re-review of the rebased branch is pending; this record otherwise stands.
+
 **Branch:** `fix/lab-1-crew-send-missing` @ `84654c0` (base `origin/main` @ `a748498`)
 **Scope:** +338/−0 in 4 files (vs main) — `instances/lab-1/crew/crew-send.py` (+79) **plus all three files of PR #20**
 **Reviewer:** Architect · 2026-08-27 18:20 UTC · read-only review (single pass)

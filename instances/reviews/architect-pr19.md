@@ -1,5 +1,12 @@
 # Adversarial Architecture Review — PR #19 (spec: Office MCP facade)
 
+> ## STATUS STAMP (Architect, 2026-08-28)
+>
+> Merged to main as `5586974` (base of PR #20's rebase). The approval verdict
+> and its verified facts stand; nothing in the #20 fix pass (B1–B3) touches or
+> contradicts the office-mcp spec. Non-blocking notes N1–N3 remain carried
+> into the implementation PR as recorded below.
+
 **Branch:** `spec/office-mcp` @ `e1b5ac6` (base `origin/main` @ `a748498`)
 **Scope:** +454/−8 in 7 files — `openspec/changes/add-office-mcp/` (proposal, design, tasks, delta), `openspec/specs/office-mcp/spec.md`, `docs/office-mcp.md`, `README.md`
 **Reviewer:** Architect · 2026-08-27 18:20 UTC · read-only review (single pass)

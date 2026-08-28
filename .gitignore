@@ -69,3 +69,32 @@ agents/*/hermes-home/skills/
 agents/*/hermes-home/review.md
 agents/*/hermes-home/portfolio.yaml
 instances/*/skills/
+
+# Per-agent runtime memory (regrows every session; repo convention is to
+# commit SOUL/config.template/skills, not runtime state — see
+# docs/foundation-sync-plan.md, delta verdict)
+agents/*/hermes-home/memories/
+
+# Regenerable skill output (scrum-sweep sweep.py; the skill itself is tracked
+# at agents/<role>/skills/)
+agents/*/hermes-home/sweep-report.md
+
+# Runtime sqlite state (same class as the already-ignored response_store.db*/state.db*)
+agents/*/hermes-home/verification_evidence.db
+
+# Runtime npm cache (regenerable; npm installs inside a hermes-home)
+agents/*/hermes-home/.npm/
+
+# Runtime LSP install (pyright via npm: node_modules + bin, regenerable)
+agents/*/hermes-home/lsp/
+
+# Nested repo clone in a runtime home (added by Architect R2; R4: wildcard —
+# any agent that clones the repo into its own home repeats the problem, not
+# just staff-engineer. SE's clone verified clean @ origin/main, 0/0
+# ahead-behind: runtime scaffolding, not a divergence.)
+agents/*/hermes-home/agent-office/
+
+# NOTE: agents/*/hermes-home/plans/ is deliberately NOT ignored. A recurring
+# untracked plans/ dir is a signal the next sync audit should see, not noise
+# (docs/foundation-sync-plan.md §1c — R2 ruling: Position A confirmed by the
+# Architect; final).

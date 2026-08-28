@@ -84,9 +84,13 @@ Do not ask for a technical specification. A specification is what caused the dri
 Every verdict is an event, so the whole chain is auditable:
 
 ```bash
-python3 crew/publish-event.py work.gate.passed  scrum-master "<series>: aligned — serves <goal>" --target <team>
-python3 crew/publish-event.py work.gate.blocked scrum-master "<series>: blocked — <gap>"        --target <team>
+# from an Office agent container:
+python3 /opt/crew/publish-event.py work.gate.passed    scrum-master "<series>: aligned — serves <goal>" --target <team>
+python3 /opt/crew/publish-event.py work.gate.blocked   scrum-master "<series>: blocked — <gap>"        --target <team>
+python3 /opt/crew/publish-event.py work.gate.escalated scrum-master "<series>: no customer answer within 24 h — proceed or cancel?" --target <team>
 ```
+
+From a host repo root the same commands work with `crew/publish-event.py` instead of `/opt/crew/publish-event.py`.
 
 `ALIGNED` verdicts record **the goal the work serves, in one line**, on the ticket or thread. That line is what the team checks its own output against, and what Scrum Master re-checks if the work drifts later.
 
@@ -96,6 +100,14 @@ python3 crew/publish-event.py work.gate.blocked scrum-master "<series>: blocked 
 - Do not gate the same series twice without new information — the anti-loop rules apply to Scrum Master too.
 - **Bias to release.** Stop on genuine inability to connect work to goal, not on style disagreement.
 - Log every verdict, including the fast passes.
+
+## Timeouts and unblock path
+
+A stop must never be a parking lot.
+
+**Re-escalation after a defined window.** A blocked series with no customer answer is re-escalated to the **human operator** after **24 hours** (default) — in the same shape as the original escalation: the recommendation plus an explicit "proceed or cancel" question. The re-escalation is itself a bus event (`work.gate.escalated`), so the wait is auditable end to end.
+
+**Self-gating.** The Scrum Master gates its own Office tickets. No exemption for being the gatekeeper: the verdict is recorded on the ticket/PR and a `work.gate.passed` is published. The guardrails (bias to release, no double-gating) apply with full force.
 
 ## Team factories must inherit this
 

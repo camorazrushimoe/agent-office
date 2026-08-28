@@ -1,9 +1,14 @@
 # Foundation Sync Audit — Delta Verdict + Merge Order
 
-> **Status:** Round 1 (staff-engineer execution). The DELTA VERDICT table starts
-> from the Scrum Master's pre-verdict; the **Architect finalizes/overrides** it.
-> Where a call changes from the pre-verdict, **both positions are kept visible**
-> below — disagreements are never averaged.
+> **Status:** **FINAL (Architect R2, 2026-08-28).** Round 1 was executed by
+> staff-engineer from the Scrum Master's pre-verdict; Round 2 is the Architect's
+> cross-review and finalization. The DELTA VERDICT table starts from the Scrum
+> Master's pre-verdict; the **Architect finalizes** it. Where a call changes,
+> **both positions are kept visible** — disagreements are never averaged.
+> R2 changes exactly two things: (1) adds one missing inventory row
+> (SE's nested clone, §1b) with its `.gitignore` entry; (2) closes §1c — the
+> `plans/` visibility call is **ruling A (visible) confirmed**. Everything else
+> in R1 is **adopted as-is** (see §4 Architect cross-review record).
 >
 > **Scope (foundation only):** `.gitignore`, this `docs/` file, the sync-audit
 > PR, and PR comments on #19/#20/#21/#22. **Nothing is merged here.** The human
@@ -88,6 +93,7 @@ memory. **No fam file is promoted.**
 | `agents/architect/hermes-home/verification_evidence.db` | **IGNORE** (gitignore) | Runtime sqlite state; same class as already-ignored `response_store.db*`/`state.db*`. | No |
 | `agents/*/hermes-home/plans/` (the dir) | **IGNORE-BY-VISIBILITY** (do **not** gitignore) | A recurring untracked `plans/` dir is a **signal** the next audit should see, not noise. **Open to challenge** — see §1c. | No (flagged open) |
 | `agents/*/hermes-home/skills/` (architect **bundle**) | **IGNORE** (already gitignored, line `agents/*/hermes-home/skills/`) | Vendor-origin bundled skills (`airtable`, `apple-*`, `claude-code`, `codebase-inspection`, `github-*`, `hermes-agent`, `notion`, `obsidian`, … ~13 categories) with a `.bundled_manifest`. **Not** factory-authored foundation. **Do not promote anything from the bundle.** | No |
+| `agents/staff-engineer/hermes-home/agent-office/` (R2 addition) | **IGNORE** (gitignore) | **Not in the original inventory** — a full **nested git clone** of this repo sitting in SE's runtime home. Architect verified R2: HEAD `a748498` == `origin/main`, 0/0 ahead-behind, clean status. Runtime scaffolding, not a divergence. | Added by Architect R2 |
 
 > **Do not confuse the two "skills" trees.** The **repo's curated foundation
 > skills** are at `agents/<role>/skills/` (**tracked**, e.g.
@@ -110,10 +116,18 @@ memory. **No fam file is promoted.**
   per-agent runtime working space, and leaving it untracked keeps polluting
   `git status`.
 
-R1 ships **Position A** (visible) and flags it for the architect. If the
-architect overturns it to B in R2/R3, this table is updated and **both
-positions remain visible** here. The `.gitignore` change for that case is a
-one-line addition.
+R1 shipped **Position A** (visible) and flagged it for the architect.
+
+**R2 ruling (Architect): Position A confirmed — `plans/` stays visible, not
+gitignored.** Rationale: the `fam-*` cluster *was* exactly the class of
+local-only delta this audit exists to catch. Making `plans/` invisible
+reproduces the failure mode this audit was commissioned for — runtime
+scaffolding silently accumulating in a "runtime" dir that nobody looks at
+because git no longer shows it. One recurring untracked dir is a cheap
+signal; a hidden recurrence is a debt. The counter-argument (git status
+pollution) is real but low-cost: the existing `.gitignore` already tolerates
+one-line-per-artifact precision, and `git status --porcelain` is what
+audits and sweeps read, not humans squinting at the TUI. **Final: A.**
 
 ### 1d. Consequence
 
@@ -124,7 +138,7 @@ local artifact deserves promotion.** That is a valid result; padding is not.
 
 ## 2. Merge order
 
-### 2a. Sequence (R1 seed)
+### 2a. Sequence (FINAL — Architect R2)
 
 ```
 #19  spec/office-mcp                       →  GO          (first)
@@ -214,11 +228,59 @@ is a clean linear-of-merges off `a748498`.
 - **No merges.** The human approves merges. No self-merge.
 - **No promotion** of any `fam-*` script or any bundled-skill content.
 - **No team/project work**, no lab/spec/dev tickets, **no Linear changes**.
-- The `plans/` visibility call (§1c) stays **open** pending architect
-  cross-review.
+- The `plans/` visibility call (§1c) is **closed in R2: Position A confirmed**
+  (visible, not ignored) — see §1c and §4.
+
+---
+
+## 4. Architect cross-review record (R2)
+
+Cross-review was conducted as PR comments (this PR's branch, `foundation/sync-audit-r1`,
+before/after it is opened, plus comments on #19/#20/#21/#22). Summary of what
+the Architect **independently re-verified in R2** (not taken on trust from R1):
+
+1. **Stacking** — re-verified locally: `git merge-base --is-ancestor 02b0719
+   84654c0` → YES; `git log 02b0719..84654c0` → exactly 1 commit; the 3 gate
+   files byte-identical (sha256) in pr-20 and pr-21. R1 correct.
+2. **Merge simulation** — re-run independently in a throwaway worktree, same
+   order as R1 (#19 → this PR → #20 → rebase #21 → merge rebased #21 → #22):
+   all operations exit 0, **zero conflicts**; rebased #21 leaves exactly 1
+   commit / 1 file / +79. R1's simulation claim confirmed.
+3. **Review state** — verified via GitHub API: the brief's "ZERO review
+   comments" is false; #19/#20/#21 each carry the architect's adversarial
+   review + verdict + a grok triage re-check, #22 the triage re-check. R1's
+   correction confirmed.
+4. **Inventory completeness** — found one artifact R1's inventory missed:
+   `agents/staff-engineer/hermes-home/agent-office/`, a **full nested git
+   clone** of this repo. Verified: HEAD `a748498` == `origin/main`, 0/0
+   ahead-behind, working tree clean → **IGNORE** (runtime scaffolding, now
+   gitignored, §1b). No other nested clones under any `hermes-home`.
+5. **`fam-*` cluster** — read all 11 files end-to-end. R1's DISCARD-all holds:
+   one-shot intake tooling for the Federated Agent Memory commission with
+   hard-coded host paths (`/opt/repo`, `/opt/tokens`), Linear project/ticket
+   ids, and the commission's expected numbers embedded in dispatch prose.
+   Promoting any of it into the foundation repo would commit project-specific
+   state into factory code. The two reusable facts (Linear API quirks,
+   HMAC-door dispatch) already live in Scrum Master memory and in the tracked
+   `crew/crew-send.py` / `office/bus/client.py` tooling. **No promotion — an
+   honest empty result, not padding.**
+6. **Architect's skills bundle** — 82 skills under
+   `agents/architect/hermes-home/skills/` with a `.bundled_manifest` (hashes of
+   vendor skills: airtable, apple-*, claude-code, github-*, notion, …). None
+   is factory-authored foundation; the repo's curated skills live at
+   `agents/<role>/skills/` (tracked) — the two trees are distinct by design.
+   Already gitignored. **Nothing to promote.**
+7. **§1c ruling** — Position A (keep `plans/` visible) confirmed, rationale
+   in §1c. **Final.**
+8. **`.gitignore` R1 content** — adopted as-is; R2 adds only the nested-clone
+   entry (§1b/§4.4).
+
+**Adoption:** the R1 delta verdict (§1) and merge order (§2) are adopted as
+final, subject to the two changes above. No R3 is required for this PR;
+rounds 1–2 are sufficient and both ended in committed artifacts.
 
 ---
 
 *Prepared by staff-engineer (R1) from the Scrum Master pre-verdict + verified
-git/GitHub evidence. Architect finalizes/overrides the verdict table and merge
-order in R2; cross-review is conducted as PR comments on #23 and #19/#20/#21/#22.*
+git/GitHub evidence; finalized by the Architect (R2) per §4. Cross-review
+conducted as PR comments on this PR and on #19/#20/#21/#22.*

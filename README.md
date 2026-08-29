@@ -157,4 +157,4 @@ deterministic Linear completion watcher are the remaining wiring.
 Office MCP is specified (`docs/office-mcp.md`, issue #18); the compose service
 is not running yet.
 
-See also: [lab-crew](https://github.com/camorazrushimoe/lab-crew) · [product-factory](https://github.com/camorazrushimoe/product-factory) · [dev-crew](https://github.com/camorazrushimoe/dev-crew)
+See also: [lab-crew](https://github.com/camorazrushimoe/lab-crew) · [product-factory](https://github.com/camorazrushimoe/product-factory) · [dev-crew](https://github.com/camorazrushimoe/dev-crew) · [plugins](https://github.com/camorazrushimoe/plugins)

@@ -1,22 +1,26 @@
 """Deterministic per-agent activity hooks (no LLM anywhere in this path).
 
-Shared logic behind the two gateway event hooks:
+Two gateway event hooks, templated into every agent's hermes-home/hooks/:
+
   task-accepted  (agent:start) -> task.started
   task-stopped   (agent:end)   -> task.finished
 
-Three jobs, all deterministic:
+Each hook does three jobs, all deterministic:
 
-  1. WHO    — resolve this agent's identity from env (AGENT_ID / FACTORY_NAME,
-              already set per container by docker-compose) with hostname
-              fallback.
-  2. WHAT   — regex-extract task references (GitHub issue / PR, Linear ticket)
-              from the inbound message. No model call.
-  3. PUBLISH— write a task.started / task.finished envelope to the shared
-              Redis bus (office:events), the same durable stream the Office
-              CLI (crew/office-log.py) and the Scrum Master read.
+  1. WHO      — resolve (agent_id, team_id) from env (AGENT_ID / FACTORY_NAME,
+                already set per container by docker-compose), hostname fallback.
+  2. WHAT     — a cheap marker of "what the agent is working on":
+                  * task_ref — regex-extracted GitHub issue/PR + Linear refs
+                  * snippet  — first N chars of the inbound message
+                and, on stop only:
+                  * handoff  — other known agent ids mentioned in the response
+  3. PUBLISH  — write a task.started / task.finished envelope to the shared
+                Redis stream office:events (the same durable stream
+                crew/office-log.py reads).
 
-Failure-isolation: every step is wrapped so a down bus or a missing mount
-never raises into the agent's turn (the hooks framework also swallows errors).
+No model call anywhere. Failure-isolation: every step is wrapped so a down
+bus or a missing mount never raises into the agent's turn (the hooks
+framework also swallows errors).
 
 Mounted into every agent at /opt/office-lib/activity.py (office repo ->
 /opt/office-lib). The thin handlers in office/hooks/*/handler.py import it.
@@ -28,25 +32,27 @@ import os
 import re
 import socket
 
+# Marker size: keep it short — "what is it doing", not the whole prompt.
+SNIPPET_LEN = 200
+
 # ---------------------------------------------------------------------------
 # 1. Identity
 # ---------------------------------------------------------------------------
 
 def identity() -> tuple[str, str]:
-    """Return (agent_id, team_id) deterministically from env, then hostname."""
-    agent = os.environ.get("AGENT_ID") or ""
-    team = (os.environ.get("FACTORY_NAME")
-            or os.environ.get("OFFICE_TEAM_ID") or "")
-    host = socket.gethostname() or ""
+    """Return (agent_id, team_id) deterministically from env, then hostname.
 
-    if not agent and "-" in host:
-        # container-name fallback: "agent-office-scrum-master" -> "scrum-master",
-        # "dev-1-developer" -> "developer".
-        agent = host.rsplit("-", 1)[-1]
-    if not agent:
-        agent = host or "unknown"
-    if not team:
-        team = "office"
+    AGENT_ID / FACTORY_NAME are the canonical names set per container by
+    docker-compose. OFFICE_AGENT_ID / OFFICE_TEAM_ID are accepted aliases.
+    Falls back to the container hostname when neither is set.
+    """
+    agent = (os.environ.get("AGENT_ID")
+             or os.environ.get("OFFICE_AGENT_ID")
+             or socket.gethostname()
+             or "unknown")
+    team = (os.environ.get("FACTORY_NAME")
+            or os.environ.get("OFFICE_TEAM_ID")
+            or "")
     return agent, team
 
 
@@ -68,13 +74,6 @@ _LINEAR_URL = re.compile(
 # Shorthand KEY-num is best-effort: it can false-positive on tokens like
 # "GPT-4". Gate it behind LINEAR_TEAM_KEYS (comma list) when precision matters.
 _LINEAR_KEY = re.compile(r"\b(?P<key>[A-Z]{1,5}-\d{1,6})\b")
-
-# Keyword scan for a *best-effort* stop status (deterministic, replaceable).
-# The authoritative done/blocked + reason is the agent's own stop-sync event
-# (next iteration); this is only a cheap first signal.
-_BLOCKED_WORDS = ("blocked", "блокер", "нужен токен", "need token",
-                  "permission", "waiting for", "cannot proceed", "stuck")
-_DONE_WORDS = ("done", "completed", "finished", "готово", "выполнено")
 
 
 def _uniq(items: list[str]) -> list[str]:
@@ -127,21 +126,54 @@ def extract_refs(text: str) -> dict:
     return {"issues": _uniq(issues), "prs": _uniq(prs), "linear": _uniq(linear)}
 
 
-def _classify_stop(response: str) -> str:
-    """Best-effort deterministic stop status from the response text."""
-    low = (response or "").lower()
-    if any(w in low for w in _BLOCKED_WORDS):
-        return "blocked"
-    if any(w in low for w in _DONE_WORDS):
-        return "done"
-    return "unknown"
+def _merge_refs(a: dict, b: dict) -> dict:
+    return {
+        "issues": _uniq(list(a.get("issues", [])) + list(b.get("issues", []))),
+        "prs": _uniq(list(a.get("prs", [])) + list(b.get("prs", []))),
+        "linear": _uniq(list(a.get("linear", [])) + list(b.get("linear", []))),
+    }
 
 
 # ---------------------------------------------------------------------------
-# 3. Publish
+# 3. Snippet + handoff (best-effort markers)
 # ---------------------------------------------------------------------------
 
-def _publish(action: str, context: dict, *, status: str | None = None) -> None:
+def snippet(text: str, n: int = SNIPPET_LEN) -> str:
+    """First N chars of the text — the cheap 'what is it doing' marker."""
+    return (text or "").strip()[:n]
+
+
+def _known_agents() -> list[str]:
+    """Known agent ids from OFFICE_AGENTS (comma list). Empty when unset."""
+    raw = os.environ.get("OFFICE_AGENTS", "")
+    return [a.strip() for a in raw.split(",") if a.strip()]
+
+
+def extract_handoff(text: str, self_agent: str) -> list[str]:
+    """Other known agent ids mentioned in text (best-effort, regex only).
+
+    Matches each id from OFFICE_AGENTS as a word in the text. A
+    team-qualified id "dev-1/developer" matches its bare part "developer".
+    The agent itself is always excluded.
+    """
+    if not text:
+        return []
+    out: list[str] = []
+    for a in _known_agents():
+        bare = a.split("/", 1)[-1]
+        if bare.lower() == (self_agent or "").lower():
+            continue
+        if re.search(rf"\b{re.escape(bare)}\b", text, re.I):
+            out.append(a)
+    return _uniq(out)
+
+
+# ---------------------------------------------------------------------------
+# 4. Publish
+# ---------------------------------------------------------------------------
+
+def _publish(action: str, context: dict, *,
+             use_response: bool = False) -> None:
     try:
         import sys
         sys.path.insert(0, "/opt/office-lib")
@@ -150,16 +182,19 @@ def _publish(action: str, context: dict, *, status: str | None = None) -> None:
         return  # office lib not mounted -> nothing to do, never raise
 
     agent, team = identity()
-    message = (context.get("message") or "")[:500]
+    message = context.get("message") or ""
     payload: dict = {
         "summary": context.get("summary") or "",
         "session_id": context.get("session_id"),
-        "message": message,
+        "snippet": snippet(message),
         "task_ref": extract_refs(message),
     }
-    if action == "task.finished":
-        payload["response"] = (context.get("response") or "")[:500]
-        payload["status"] = status or "unknown"
+    if use_response:
+        response = context.get("response") or ""
+        payload["snippet"] = snippet(response)
+        payload["task_ref"] = _merge_refs(payload["task_ref"],
+                                          extract_refs(response))
+        payload["handoff"] = extract_handoff(response, agent)
 
     try:
         publish_event(BusClient(), make_envelope(
@@ -178,7 +213,5 @@ def on_start(context: dict) -> None:
 def on_stop(context: dict) -> None:
     """agent:end — the agent finished a turn (deterministic)."""
     agent, _team = identity()
-    status = _classify_stop(context.get("response") or "")
-    _publish("task.finished",
-             {**context, "summary": f"{agent} stopped ({status})"},
-             status=status)
+    _publish("task.finished", {**context, "summary": f"{agent} stopped"},
+             use_response=True)

@@ -1,83 +1,57 @@
 # Why
 
 Agent teams on the factory trigger each other through the shared bus and
-doors, but there is **no deterministic, factory-wide record of what each agent
-is doing right now**. When a handoff silently fails — an agent stops without
-signalling, dies mid-task, or finishes without telling anyone — the chain of
-work just stops, and nobody can see *where* or *why*.
+doors, but there is no deterministic, factory-wide record of when each agent
+started and stopped working. When a handoff silently fails — an agent stops
+without signalling, dies mid-task, or finishes without telling anyone — the
+chain of work just stops, and nobody can see *where* or *why*.
 
-Today the only signals are:
+Today the only deterministic signal is container lifecycle
+(`agent.started` / `agent.stopped` from `factory-control`), which says whether
+the container is up — not whether the LLM is actually working a task.
 
-1. **Container lifecycle events** from `factory-control`
-   (`agent.started` / `agent.stopped` = docker start/stop). These say nothing
-   about whether the LLM is *working on a task* — only whether the container
-   is up.
-2. **Ad-hoc bus events** an agent happens to publish. These are rich but
-   *optional* — nothing forces an agent to emit them, so the moment a handoff
-   breaks, the signal goes dark with it.
-
-Neither fires deterministically at the two moments that actually matter:
-**when an agent accepted a task** and **when it finished (or stopped) working
-on it**.
-
-The fix is a **Scrum Master control plane**: two gateway hooks on every agent
-that fire deterministically at task-start and task-stop, a single board that
-projects them into one JSON view, and a Scrum Master controller that watches
-that board, catches stalls, and is the escalation point for blockers.
+This change lays the foundation: two deterministic gateway hooks on every
+agent that publish a `task.started` / `task.finished` heartbeat to the shared
+Redis bus, with **no LLM anywhere in the hook path**.
 
 # What Changes
 
-- **Two Hermes gateway event hooks**, templated into every agent's
+- Two Hermes gateway event hooks, templated into every agent's
   `hermes-home/hooks/`:
   - `task-accepted` on `agent:start` → publishes `task.started`
-  - `task-stopped` on `agent:end` → publishes `task.finished`
-    (best-effort status classification from the response text)
-- **A board writer** — always-on, single-writer service that subscribes to
-  `office:events` and materialises `board.json` (current state per agent +
-  rolling event window, capped). This is the Scrum Master's registry.
-- **A Scrum Master controller** (cron job + skill) that reads `board.json` and:
-  - detects agents stuck in `working` past a threshold → manual check
-    (ping the agent, "are you alive / what's your status"),
-  - surfaces agents in `blocked` awaiting response → resolves or routes,
-  - flags tasks with no PR / issue / Linear reference (hygiene smell).
-- **A stop-sync convention** (`crew/OFFICE-STANDARD.md` + agent SOULs): before
-  stopping, every agent SHALL publish either
-  `task.finished { status: done }` or `task.blocked { reason }`.
-- **New event `task.blocked`** (explicit escalation: blocker vs question).
-  Reuse `task.started` / `task.finished` / `task.stale` from the existing
-  message-bus schema; keep `agent.started` / `agent.stopped` for container
-  lifecycle (unchanged).
+  - `task-stopped`  on `agent:end`   → publishes `task.finished`
+- Shared deterministic logic in `office/activity.py` (mounted at
+  `/opt/office-lib/activity.py`), three jobs:
+  - **who** — `agent` + `team` from env (`AGENT_ID` / `FACTORY_NAME`),
+  - **what** — a cheap marker of the work:
+    - `task_ref` — regex-extracted GitHub issue/PR + Linear refs,
+    - `snippet` — first 200 chars (inbound message on start, response on stop),
+    - `handoff` (stop only) — other known agent ids mentioned in the response.
+- Events land on the durable Redis stream `office:events`, the same stream
+  `crew/office-log.py` reads.
 
 # Capabilities
 
 ### Modified
-- `message-bus` — add `task.blocked`; document the `task.started` /
-  `task.finished` payload contract (`task_ref`, `status`, `reason`).
-- `observability` — `board.json` + `crew/board.py` CLI become the Scrum
-  Master's first-class input (in addition to the event log).
-- `agent-roles` — Scrum Master is the factory controller / escalation point.
-
-### New
-- `agent-activity` (working title) — deterministic per-agent activity
-  heartbeat + board contract.
+- `message-bus` — document the `task.started` / `task.finished` payload
+  contract (`task_ref`, `snippet`, `handoff`).
 
 # Impact
 
-- Affected specs: `message-bus`, `observability`, `agent-roles`; new
-  `agent-activity` spec.
+- Affected specs: `message-bus`.
 - Affected code:
-  - NEW `agents/*/hermes-home/hooks/task-accepted/` + `task-stopped/`
-    (templated at factory generation; also for `instances/*/home/*`)
-  - NEW `office/scrum/board.py` (board writer; sibling of
-    `office/bus/recorder.py`)
-  - NEW compose service `scrum-board` (always-on, like `factory-control`)
-  - NEW `registry/scrum-master/board.json` (materialised view; gitignored)
-  - `crew/OFFICE-STANDARD.md` + agent SOULs — stop-sync convention
-  - `agents/scrum-master/` — controller skill + cron
-  - `crew/board.py` CLI (or extend `crew/office-log.py --board`)
+  - `office/activity.py` — shared deterministic hook logic.
+  - `office/hooks/task-accepted/` + `office/hooks/task-stopped/` — the two
+    hooks (`HOOK.yaml` + thin `handler.py`).
+  - Factory wiring (copy hooks into agent homes; ensure `AGENT_ID` /
+    `FACTORY_NAME` / `OFFICE_BUS_URL` / `OFFICE_AGENTS` env are present) —
+    tracked separately in `tasks.md`.
 
 # Non-goals (this change)
 
-- No visual dashboard (explicitly out of scope, matches `observability`).
-- No change to how work is *routed* — only visibility + stall recovery.
-- Hooks are **observer-only**: they never block or alter the agent's turn.
+- No Scrum Master controller, stall detection, or escalation.
+- No `board.json` materialised view.
+- No stop-sync convention (`task.blocked` / rich `done` status).
+- No visual dashboard.
+- No change to how work is *routed* — hooks are **observer-only**: they never
+  block or alter the agent's turn.

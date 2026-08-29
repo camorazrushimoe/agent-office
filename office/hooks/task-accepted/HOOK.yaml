@@ -1,0 +1,6 @@
+name: task-accepted
+description: >
+  Deterministic heartbeat (no LLM) — agent began processing a message.
+  Publishes a task.started envelope to the Office Redis bus.
+events:
+  - agent:start

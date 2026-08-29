@@ -1,50 +1,49 @@
 # Tasks — add-scrum-master-controller
 
-## 1. Spec (this PR)
-- [x] proposal.md
-- [x] design.md
-- [ ] specs/agent-activity/spec.md — new capability spec (hooks, board,
-      stop-sync, stale heartbeat)
-- [ ] specs/message-bus/spec.md — delta: `task.blocked` + payload contract
-- [ ] specs/observability/spec.md — delta: board as Scrum Master input
-- [ ] specs/agent-roles/spec.md — delta: Scrum Master = controller /
-      escalation point
+> Direction update (agreed in review): hooks publish straight to the Redis
+> bus; the Scrum Master reads the bus **directly** via a skill — no
+> materialised `board.json` needed. The board is dropped (Redis stream is the
+> durable store). Scope for this iteration: **hooks only**.
 
-## 2. Hooks (deterministic layer)
-- [ ] `office/hooks/task-accepted/` + `office/hooks/task-stopped/` canonical
-      templates (`HOOK.yaml` + `handler.py`)
-- [ ] `task-accepted` publishes `task.started` with best-effort `task_ref`
-- [ ] `task-stopped` publishes `task.finished` with best-effort `status`
-- [ ] factory generation writes both hooks into every agent home
-      (office agents + `instances/*/home/*`) and sets `OFFICE_AGENT_ID` /
-      `OFFICE_TEAM_ID`
+## 1. Hooks (this iteration — deterministic, no LLM)
+- [x] `office/activity.py` — shared logic: identity (env) + regex ref
+      extraction (GitHub issue / PR, Linear) + `task.started` /
+      `task.finished` publish to the bus
+- [x] `office/hooks/task-accepted/` (`HOOK.yaml` + `handler.py`) on
+      `agent:start`
+- [x] `office/hooks/task-stopped/` (`HOOK.yaml` + `handler.py`) on `agent:end`
+- [ ] Factory generation: copy both hooks into every agent home
+      (office agents + `instances/*/home/*`); ensure `AGENT_ID` /
+      `FACTORY_NAME` / `OFFICE_BUS_URL` env are present (office agents
+      already have them via compose)
+- [ ] `crew-send.py` + door path: add a `sender` field so "от кого задача"
+      is deterministically visible to the hook (currently only `{message}`)
 
-## 3. Board writer (single writer)
-- [ ] `office/scrum/board.py` — subscribe `office:events`, maintain
-      `board.json` (current state + rolling `events` window capped at 1000)
-- [ ] `docker-compose.yml` — always-on `scrum-board` service
-      (`restart: unless-stopped`, repo + shared data mounts)
-- [ ] gitignore `registry/scrum-master/board.json`
-- [ ] `crew/board.py` CLI (or `crew/office-log.py --board`)
+## 2. Spec (fold in alongside implementation)
+- [ ] `specs/message-bus/spec.md` — document `task.started` /
+      `task.finished` payload contract (`task_ref`, `status`, `session_id`)
+- [ ] `specs/observability/spec.md` — note these heartbeats are first-class
+      Scrum Master input
+- [ ] `specs/agent-roles/spec.md` — Scrum Master = controller / escalation
+      point (deferred behaviour, spec the role now)
 
-## 4. Stop-sync convention (rich layer)
-- [ ] `crew/OFFICE-STANDARD.md` — mandatory terminal event before stopping
-- [ ] agent SOULs — add the sync obligation (`task.finished{done}` /
-      `task.blocked{reason}`)
+## 3. Scrum Master read skill (next iteration)
+- [ ] `agents/scrum-master/skills/scrum-controller/` — read `office:events`
+      via `crew/office-log.py --follow` (or bus client `subscribe`), build a
+      live picture: which agents are `working`/`stopped`, which stopped
+      without a terminal status, which tasks lack refs
+- [ ] stale-heartbeat check: `task.started` with no `task.finished` within
+      `STALL_TIMEOUT` → ping the agent (door) → `task.stale` + escalate
 
-## 5. Scrum Master controller (LLM layer)
-- [ ] `agents/scrum-master/skills/scrum-controller/` — sweep skill:
-      read board → flag stale/blocked/missing-ref/no-sync → act
-- [ ] cron job on scrum-master (interval; STALL_TIMEOUT knob)
+## 4. Deferred (not in scope now)
+- [ ] `board.json` materialised view — dropped; Redis stream is the source
+- [ ] Stop-sync convention (`task.blocked{reason}`) — LLM-driven rich layer,
+      builds on top of these deterministic hooks
 
-## 6. Validation
+## 5. Validation
 - [ ] Hook fires on a real task: `task.started` then `task.finished` visible
-      via `crew/office-log.py` and reflected in `board.json`
+      via `crew/office-log.py`
+- [ ] Ref extraction: issue URL, `owner/repo#N`, `PR #N`, `issue #N`, bare
+      `#N`, Linear URL + `KEY-N` (covered by unit-style run)
 - [ ] Broken bus does not affect the agent (hook fails silently, turn proceeds)
-- [ ] Stale heartbeat: start with no stop → controller pings, then
-      `task.stale`
-- [ ] Blocked flow: agent publishes `task.blocked{reason}` → board shows
-      `blocked` → controller routes/escalates
-- [ ] 1000-line cap: window trims oldest, file stays bounded
-- [ ] `board.json` stays valid under concurrent activity from many agents
-      (single writer invariant)
+- [ ] Missing `/opt/office-lib` mount does not raise into the agent

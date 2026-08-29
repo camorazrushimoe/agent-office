@@ -1,0 +1,7 @@
+name: task-stopped
+description: >
+  Deterministic heartbeat (no LLM) — agent finished a turn.
+  Publishes a task.finished envelope (with best-effort status) to the Office
+  Redis bus.
+events:
+  - agent:end

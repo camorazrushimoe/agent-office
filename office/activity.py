@@ -161,7 +161,7 @@ def extract_handoff(text: str, self_agent: str) -> list[str]:
     out: list[str] = []
     for a in _known_agents():
         bare = a.split("/", 1)[-1]
-        if bare.lower() == (self_agent or "").lower():
+        if bare.lower() == (self_agent or "").split("/", 1)[-1].lower():
             continue
         if re.search(rf"\b{re.escape(bare)}\b", text, re.I):
             out.append(a)

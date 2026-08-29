@@ -16,8 +16,9 @@ Redis bus, with **no LLM anywhere in the hook path**.
 
 # What Changes
 
-- Two Hermes gateway event hooks, templated into every agent's
-  `hermes-home/hooks/`:
+- Two Hermes gateway event hooks, defined in `office/hooks/` and copied into
+  each agent's `hermes-home/hooks/` by the factory wiring step (tracked
+  separately in `tasks.md`):
   - `task-accepted` on `agent:start` → publishes `task.started`
   - `task-stopped`  on `agent:end`   → publishes `task.finished`
 - Shared deterministic logic in `office/activity.py` (mounted at

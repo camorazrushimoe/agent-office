@@ -1,7 +1,7 @@
 model:
-  default: qwen3-8-27b
+  default: deepseek-v4-flash
   provider: custom
-  base_url: https://api.runinfra.ai/v1
+  base_url: https://api.deepseek.com/v1
   api_key: ${CUSTOM_API_KEY}
 platforms:
   webhook:

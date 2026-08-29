@@ -2,8 +2,10 @@
 # Manages agent container start/stop ONLY (registry allowlist).
 FROM python:3.12-slim
 
+# Debian 13 (trixie) split docker.io: the CLI client now lives in docker-cli.
+# factory_control.py shells out to `docker`, so both packages are required.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends docker.io redis-tools \
+ && apt-get install -y --no-install-recommends docker.io docker-cli redis-tools \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

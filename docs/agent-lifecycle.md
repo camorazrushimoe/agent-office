@@ -40,7 +40,7 @@ Responsibilities:
 - **Stop** agents that exceeded `IDLE_TIMEOUT` (default **40 minutes**) and have no active task
 - **Start** agents on wake request
 - Wait for health before reporting success
-- Publish bus events: `agent.started`, `agent.stopped`, `agent.wake_failed`
+- Publish bus events: `agent.started`, `agent.stopped`, `agent.wake_failed`, `agent.wake_ignored`
 
 It talks to the local Docker engine (docker.sock) for the containers it owns.
 

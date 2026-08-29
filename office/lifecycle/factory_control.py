@@ -112,6 +112,34 @@ def seconds_idle(log_path: Path) -> float | None:
         return None
 
 
+def container_started_at(name: str) -> datetime | None:
+    """Container start time (UTC) from docker inspect; None on failure."""
+    rc, out = sh(["docker", "inspect", "-f", "{{.State.StartedAt}}", name])
+    if rc != 0 or not out.strip():
+        return None
+    try:
+        return datetime.fromisoformat(out.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def effective_idle(idle_from_log: float | None,
+                   started_at: datetime | None,
+                   now: datetime) -> float | None:
+    """Idle bounded by time since container start (2b).
+
+    A just-started agent whose log still holds the previous session's
+    task-work lines must not be reaped for stale idleness — a process that
+    started T seconds ago can never have been idle longer than T seconds.
+    """
+    if started_at is None:
+        return idle_from_log
+    since_start = max(0.0, (now - started_at).total_seconds())
+    if idle_from_log is None:
+        return since_start
+    return min(idle_from_log, since_start)
+
+
 def busy(agent_id: str, bus: BusClient) -> bool | None:
     """True/False from bus; None on error (fail-safe: skip the agent)."""
     try:
@@ -193,7 +221,10 @@ def reap_once(registry: list[dict], bus: BusClient) -> None:
             continue
         if is_busy:
             continue
-        idle = seconds_idle(REPO / a["log_path"] / "logs/agent.log")
+        idle = effective_idle(
+            seconds_idle(REPO / a["log_path"] / "logs/agent.log"),
+            container_started_at(name),
+            datetime.now(timezone.utc))
         if idle is None or idle < IDLE_TIMEOUT_S:
             continue
         log(f"stopping {name}: idle {int(idle // 60)}m >= "
@@ -207,11 +238,22 @@ def reap_once(registry: list[dict], bus: BusClient) -> None:
 
 # ---- wake -----------------------------------------------------------------
 
+def normalize_target(target: str) -> str:
+    """Map colon-form 'team:role' (the wake_hint shipped in per-instance
+    door registries) to the canonical registry-id form 'team-role'. The
+    factory registry keys instance agents by hyphenated id."""
+    return target.replace(":", "-")
+
+
 def wake(target: str, registry: list[dict]) -> None:
+    raw = target
+    target = normalize_target(target)
     entry = next((a for a in registry
                   if a["id"] == target or a["container"] == target), None)
     if entry is None:
-        log(f"wake ignored: '{target}' not in registry")
+        emit("agent.wake_ignored", raw,
+             f"wake target '{raw}' matched no registry entry",
+             extra={"target": raw})
         return
     name = entry["container"]
     if name in running_containers():

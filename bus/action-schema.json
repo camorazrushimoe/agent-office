@@ -15,7 +15,7 @@
     },
     "action": {
       "type": "string",
-      "description": "Action type. Examples: project.created, project.assigned, research.started, research.ready, implementation.started, handoff.requested, handoff.accepted, handoff.rejected, promotion.requested, promotion.completed, task.started, task.finished, task.stale, project.blocked, agent.started, agent.stopped, agent.wake, agent.wake_failed, override.recorded, audit.started, capacity.changed"
+      "description": "Action type. Examples: project.created, project.assigned, research.started, research.ready, implementation.started, handoff.requested, handoff.accepted, handoff.rejected, promotion.requested, promotion.completed, task.started, task.finished, task.stale, project.blocked, agent.started, agent.stopped, agent.wake, agent.wake_failed, agent.wake_ignored, override.recorded, audit.started, capacity.changed"
     },
     "target": {
       "type": "string",

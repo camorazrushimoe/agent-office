@@ -34,6 +34,7 @@ Lifecycle transitions SHALL emit bus events at least:
 - `agent.started`
 - `agent.stopped`
 - `agent.wake_failed` (when applicable)
+- `agent.wake_ignored` (when a wake target matches no registered agent)
 
 These events MUST be visible to the Office event log / Scrum Master status paths.
 

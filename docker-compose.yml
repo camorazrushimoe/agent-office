@@ -85,6 +85,7 @@ services:
       - TOKENS_FILE=/opt/tokens/tokens.yaml
       - FACTORY_NAME=office
       - AGENT_ID=architect
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8751:8644"
@@ -117,6 +118,7 @@ services:
       - TOKENS_FILE=/opt/tokens/tokens.yaml
       - FACTORY_NAME=office
       - AGENT_ID=staff-engineer
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8752:8644"
@@ -146,6 +148,7 @@ services:
       - TOKENS_FILE=/opt/tokens/tokens.yaml
       - FACTORY_NAME=office
       - AGENT_ID=scrum-master
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8753:8644"
@@ -178,6 +181,7 @@ services:
       - TOKENS_FILE=/opt/tokens/tokens.yaml
       - FACTORY_NAME=office
       - AGENT_ID=super-devops
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "8754:8644"

@@ -42,15 +42,18 @@ SNIPPET_LEN = 200
 def identity() -> tuple[str, str]:
     """Return (agent_id, team_id) deterministically from env, then hostname.
 
-    AGENT_ID / FACTORY_NAME are the canonical names set per container by
-    docker-compose. OFFICE_AGENT_ID / OFFICE_TEAM_ID are accepted aliases.
-    Falls back to the container hostname when neither is set.
+    agent = AGENT_ID (bare role, set per container by docker-compose).
+    team  = TEAM_NAME (the running instance, e.g. "dev-1") when present;
+            office agents carry no TEAM_NAME, so they fall back to
+            FACTORY_NAME ("office"). OFFICE_AGENT_ID / OFFICE_TEAM_ID are
+            accepted aliases; hostname is the last-resort agent fallback.
     """
     agent = (os.environ.get("AGENT_ID")
              or os.environ.get("OFFICE_AGENT_ID")
              or socket.gethostname()
              or "unknown")
-    team = (os.environ.get("FACTORY_NAME")
+    team = (os.environ.get("TEAM_NAME")
+            or os.environ.get("FACTORY_NAME")
             or os.environ.get("OFFICE_TEAM_ID")
             or "")
     return agent, team

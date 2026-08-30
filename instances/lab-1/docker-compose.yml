@@ -35,6 +35,7 @@ services:
       - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
       - AGENT_ID=research-lead
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8671:8644"
@@ -61,6 +62,7 @@ services:
       - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
       - AGENT_ID=research-engineer
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8672:8644"
@@ -87,6 +89,7 @@ services:
       - FACTORY_NAME=lab-crew
       - TEAM_NAME=lab-1
       - AGENT_ID=evaluation
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8673:8644"

@@ -36,8 +36,8 @@ def check(name: str, got, want) -> None:
 
 def _save_env() -> dict:
     return {k: os.environ.get(k) for k in
-            ("AGENT_ID", "FACTORY_NAME", "OFFICE_AGENTS", "LINEAR_TEAM_KEYS",
-             "OFFICE_BUS_URL")}
+            ("AGENT_ID", "FACTORY_NAME", "TEAM_NAME", "OFFICE_AGENTS",
+             "LINEAR_TEAM_KEYS", "OFFICE_BUS_URL")}
 
 
 def _restore_env(saved: dict) -> None:
@@ -97,9 +97,19 @@ def test_handoff() -> None:
 def test_identity() -> None:
     os.environ["AGENT_ID"] = "architect"
     os.environ["FACTORY_NAME"] = "office"
-    check("identity from env", activity.identity(), ("architect", "office"))
+    check("identity from env (office)", activity.identity(),
+          ("architect", "office"))
+    # instance agents: TEAM_NAME (running instance) wins over FACTORY_NAME
+    # (template) — the activity event must carry the real team, not the
+    # template name.
+    os.environ["AGENT_ID"] = "developer"
+    os.environ["FACTORY_NAME"] = "dev-crew"
+    os.environ["TEAM_NAME"] = "dev-1"
+    check("identity prefers TEAM_NAME (instance)", activity.identity(),
+          ("developer", "dev-1"))
     os.environ.pop("AGENT_ID", None)
     os.environ.pop("FACTORY_NAME", None)
+    os.environ.pop("TEAM_NAME", None)
     # hostname fallback: returns *something* non-empty, not a lossy parse
     agent, _team = activity.identity()
     check("identity hostname fallback non-empty", bool(agent), True)

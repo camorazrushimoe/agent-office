@@ -40,6 +40,7 @@ services:
       - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
       - AGENT_ID=developer
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8661:8644"
@@ -66,6 +67,7 @@ services:
       - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
       - AGENT_ID=qa
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8662:8644"
@@ -92,6 +94,7 @@ services:
       - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
       - AGENT_ID=tech-pm
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8663:8644"
@@ -119,6 +122,7 @@ services:
       - FACTORY_NAME=dev-crew
       - TEAM_NAME=dev-1
       - AGENT_ID=devops
+      - OFFICE_AGENTS=architect,staff-engineer,scrum-master,super-devops,research-lead,research-engineer,evaluation,technical-product-manager,product-researcher,system-domain-analyst,adversarial-reviewer,developer,tech-pm,qa,devops
       - OFFICE_BUS_URL=redis://shared-memory:6379
     ports:
       - "127.0.0.1:8664:8644"

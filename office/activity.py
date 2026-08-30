@@ -1,14 +1,17 @@
 """Deterministic per-agent activity hooks (no LLM anywhere in this path).
 
-Two gateway event hooks, templated into every agent's hermes-home/hooks/:
+Two gateway event hooks, copied into every agent's hermes-home/hooks/ (factory
+wiring):
 
   task-accepted  (agent:start) -> task.started
   task-stopped   (agent:end)   -> task.finished
 
 Each hook does three jobs, all deterministic:
 
-  1. WHO      — resolve (agent_id, team_id) from env (AGENT_ID / FACTORY_NAME,
-                already set per container by docker-compose), hostname fallback.
+  1. WHO      — resolve (agent_id, team_id) from env: AGENT_ID + TEAM_NAME
+                (falling back to FACTORY_NAME for office agents, which carry
+                no TEAM_NAME), set per container by docker-compose; hostname
+                fallback.
   2. WHAT     — a cheap marker of "what the agent is working on":
                   * task_ref — regex-extracted GitHub issue/PR + Linear refs
                   * snippet  — first N chars of the inbound message

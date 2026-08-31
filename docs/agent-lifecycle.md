@@ -51,6 +51,9 @@ at the Office repo root. Every instance mounts that file read-only into every
 agent container at `/opt/crew/crew-send.py` (alongside the per-instance
 `crew/` mount); instances do NOT ship their own copy. A missing client, or a
 per-instance copy that diverges from the canonical file, is a spec violation.
+SHA-256 identity of any surviving copy and the canonical mount on every agent
+service is enforced deterministically by `python3 crew/validate_crew_send.py`
+(run at instantiation/sync).
 
 The client delivers a message to an agent's webhook door. Delivery is
 wake-aware (**sender-side wake contract**):

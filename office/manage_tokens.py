@@ -251,8 +251,48 @@ def _write_registry(path: Path, entries: dict) -> None:
     path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
 
 
+def verify_canonical_client() -> list[str]:
+    """Composition spec: instances SHALL NOT ship a divergent crew-send.py.
+
+    The canonical client is crew/crew-send.py, delivered to containers by a
+    read-only mount. Any per-instance copy that still exists must be
+    byte-identical (SHA-256); a divergent copy is a spec violation. Returns a
+    list of violation descriptions (empty = compliant).
+    """
+    import hashlib
+
+    canonical = ROOT / "crew" / "crew-send.py"
+    if not canonical.is_file():
+        return ["crew/crew-send.py missing"]
+    sha = hashlib.sha256(canonical.read_bytes()).hexdigest()
+    violations = []
+    instances_dir = ROOT / "instances"
+    if not instances_dir.is_dir():
+        return violations
+    for inst in sorted(instances_dir.iterdir()):
+        copy = inst / "crew" / "crew-send.py"
+        if not copy.is_file():
+            continue
+        if hashlib.sha256(copy.read_bytes()).hexdigest() != sha:
+            violations.append(
+                f"{copy.relative_to(ROOT)} diverges from canonical "
+                "crew/crew-send.py (sha256 mismatch)")
+    return violations
+
+
 def cmd_derive_agents() -> int:
-    """Regenerate every door registry (office + each instance) from tokens.yaml."""
+    """Regenerate every door registry (office + each instance) from tokens.yaml.
+
+    Also verifies the canonical door client rule (no divergent per-instance
+    crew-send.py copies) so the sync step enforces the composition spec.
+    """
+    violations = verify_canonical_client()
+    if violations:
+        for v in violations:
+            print(f"[manage-tokens] SPEC VIOLATION: {v}")
+        print("[manage-tokens] remove the copy; the canonical client is "
+              "delivered by the read-only mount at /opt/crew/crew-send.py")
+        return 1
     tokens = load_tokens()
     doors = tokens.get("doors") or {}
     written = 0

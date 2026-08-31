@@ -11,6 +11,10 @@ Loops:
      signal is unreadable; busy-locked agents are never stopped.
   2. Wake listener: office:inbox:* envelopes with action=agent.wake start
      the target container (idempotent), wait for health, emit events.
+  3. Durable wake re-scan (startup + every CHECK_INTERVAL): XREAD
+     office:events for agent.wake after the persisted high-water mark and
+     handle them through the same idempotent wake path, so wakes published
+     while this controller was down are not lost (subscribe gap).
 
 Events go through the durable publish path (bus.client.publish_event).
 """
@@ -31,11 +35,17 @@ REGISTRY = Path(os.environ.get(
     "FACTORY_REGISTRY", str(REPO / "office/registry/factory-agents.json")))
 IDLE_TIMEOUT_S = int(os.environ.get("IDLE_TIMEOUT_S", str(40 * 60)))
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "120"))
-WAKE_TIMEOUT_S = int(os.environ.get("WAKE_TIMEOUT_S", "90"))
+WAKE_TIMEOUT_S = float(os.environ.get("WAKE_TIMEOUT_S", "90"))
 DOOR_PORT = int(os.environ.get("DOOR_PORT", "8644"))
+HWM_KEY = "office:state:factory-control:events-hwm"
 
 sys.path.insert(0, "/opt/office-lib")
-from bus.client import BusClient, make_envelope, publish_event  # noqa: E402
+from bus.client import (  # noqa: E402
+    BusClient,
+    EVENTS_STREAM,
+    make_envelope,
+    publish_event,
+)
 
 ACTIVITY_MARKS = ("conversation_loop:", "tool_executor:", "inbound message",
                   "response ready:")
@@ -269,7 +279,8 @@ def wake(target: str, registry: list[dict]) -> None:
 def listen_wakes(registry: list[dict]) -> None:
     """PSUBSCRIBE office:inbox:*; reconnect quietly on socket timeouts.
 
-    Known trade-off (spec'd): envelopes published while we are down are lost.
+    The durable re-scan (scan_wake_events) closes the gap: envelopes
+    published while we are down are processed on startup / next interval.
     """
     while True:
         try:
@@ -285,6 +296,37 @@ def listen_wakes(registry: list[dict]) -> None:
             time.sleep(2)
 
 
+def scan_wake_events(bus: BusClient, registry: list[dict]) -> None:
+    """Durable re-scan of office:events for agent.wake envelopes.
+
+    XREADs the durable event stream after the persisted high-water mark and
+    handles every agent.wake envelope through the same idempotent wake path,
+    then persists the new mark. This closes the subscribe gap: wakes
+    published while this controller was down are processed on the next scan
+    (startup or CHECK_INTERVAL) instead of being lost. Re-processing is safe
+    because waking a running agent is a no-op (idempotent wake path).
+
+    First-ever boot has no persisted mark; seed from the stream tail (a
+    concrete id, not "$") so the full stream history is not replayed and
+    reaper-stopped agents are not resurrected. A restart after downtime
+    resumes from the persisted mark and picks up exactly the wakes published
+    while we were down.
+    """
+    last = bus.get_key(HWM_KEY)
+    if last is None:
+        last = bus.xrevrange_tail(EVENTS_STREAM) or "0-0"
+        bus.set_key(HWM_KEY, last)
+    while True:
+        entries = bus.xread(EVENTS_STREAM, last, count=100)
+        if not entries:
+            break
+        for eid, fields in entries:
+            if fields.get("action") == "agent.wake":
+                wake(fields.get("target") or "", registry)
+            last = eid
+        bus.set_key(HWM_KEY, last)
+
+
 def main() -> int:
     registry = load_registry()
     bus = BusClient()
@@ -292,6 +334,10 @@ def main() -> int:
         f"interval={CHECK_INTERVAL}s wake={WAKE_TIMEOUT_S}s")
     threading.Thread(target=listen_wakes, args=(registry,), daemon=True).start()
     while True:
+        try:
+            scan_wake_events(bus, registry)
+        except Exception as exc:
+            log(f"wake scan error: {exc}")
         try:
             reap_once(registry, bus)
         except Exception as exc:

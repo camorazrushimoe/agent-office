@@ -14,9 +14,12 @@ Covers the wake-on-failure contract (spec: add-door-client-wake-path):
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
+import tempfile
 import urllib.error
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))   # crew
 if HERE not in sys.path:
@@ -101,14 +104,10 @@ def test_redelivery_failure_after_wake() -> None:
     Exercises send()'s wake path with a mocked bus and mocked HTTP: first
     POST raises connection refused, health comes back 200, re-delivery POST
     raises again -> WakeError (never a silent drop)."""
-    import json as _json
-    import tempfile
-    from unittest import mock
-
     with tempfile.TemporaryDirectory() as d:
         reg = os.path.join(d, "agents.json")
         with open(reg, "w", encoding="utf-8") as f:
-            _json.dump({"dev-1-qa": {
+            json.dump({"dev-1-qa": {
                 "host_url": "http://127.0.0.1:8662/webhooks/inbox",
                 "container_url": "http://dev-1-qa:8644/webhooks/inbox",
                 "secret": "s"}}, f)
@@ -192,7 +191,11 @@ def test_canonical_client_rule() -> None:
         with open(compose, encoding="utf-8") as f:
             lines = f.read().splitlines()
         # split into service blocks under the top-level `services:` section:
-        # a 2-space-indented `  name:` line, followed by 6-space volume mounts
+        # a 2-space-indented `  name:` line, followed by 6-space volume mounts.
+        # APPROXIMATION: this is a deterministic structural check, not a YAML
+        # parser — it relies on the repo's uniform compose indentation and
+        # only inspects volume lines; `docker compose config` is the real
+        # syntax gate and is run separately at deploy time.
         current = None
         services = {}
         in_services = False

@@ -204,6 +204,18 @@ class BusClient:
                 out.append((eid, fields))
         return out
 
+    def xrevrange_tail(self, key: str) -> str | None:
+        """ID of the newest stream entry, or None when the stream is empty.
+
+        Used to seed a durable re-scan from a concrete position (not "$") on
+        first boot, so a later restart resumes from a real stream id.
+        """
+        reply = self.cmd("XREVRANGE", key, "+", "-", "COUNT", "1")
+        # reply: [[id, [f1, v1, ...]], ...] or []
+        if not reply or not isinstance(reply[0], list) or len(reply[0]) < 1:
+            return None
+        return reply[0][0]
+
     def psubscribe(self, patterns: list[str]) -> Iterator[tuple[str, str]]:
         """Blocking generator yielding (pattern, channel, message)-style
         tuples (channel, message) matched via PSUBSCRIBE glob patterns."""

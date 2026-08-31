@@ -9,7 +9,7 @@ agent is running and healthy before the message is accepted as delivered.
 
 **Sender side (door client).** The canonical door client (`crew-send.py`) SHALL
 be the component that guarantees this contract on the sender's behalf. When
-the target door is unreachable (connection refused, timeout, or a non-success
+the target door is unreachable (connection refused, timeout, or a 5xx
 HTTP status), the client SHALL, in order:
 
 1. Publish an `agent.wake` envelope for the target, durably
@@ -43,9 +43,12 @@ rather than lost, factory-control SHALL also scan the durable event stream
 (`office:events`) for `agent.wake` envelopes: on startup and at each scan
 interval it SHALL XREAD envelopes after its last processed position (persisted
 high-water mark) and handle them through the same idempotent wake path.
-Re-processing is safe because waking an already-running agent is a no-op. The
-door client's wake-wait still times out and the send fails loudly if the
-controller cannot process the wake in time; the scan may still start the
+Re-processing is safe because waking an already-running agent is a no-op. On
+first-ever boot (no persisted mark) the scan SHALL seed from the stream tail —
+a concrete id, not `0` — so the full history is not replayed and
+reaper-stopped agents are not resurrected; restarts resume from the persisted
+mark. The door client's wake-wait still times out and the send fails loudly if
+the controller cannot process the wake in time; the scan may still start the
 target for subsequent deliveries.
 
 #### Scenario: door client wakes a sleeping agent

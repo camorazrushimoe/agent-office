@@ -35,7 +35,7 @@ REGISTRY = Path(os.environ.get(
     "FACTORY_REGISTRY", str(REPO / "office/registry/factory-agents.json")))
 IDLE_TIMEOUT_S = int(os.environ.get("IDLE_TIMEOUT_S", str(40 * 60)))
 CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "120"))
-WAKE_TIMEOUT_S = int(os.environ.get("WAKE_TIMEOUT_S", "90"))
+WAKE_TIMEOUT_S = float(os.environ.get("WAKE_TIMEOUT_S", "90"))
 DOOR_PORT = int(os.environ.get("DOOR_PORT", "8644"))
 HWM_KEY = "office:state:factory-control:events-hwm"
 
@@ -299,15 +299,23 @@ def listen_wakes(registry: list[dict]) -> None:
 def scan_wake_events(bus: BusClient, registry: list[dict]) -> None:
     """Durable re-scan of office:events for agent.wake envelopes.
 
-    XREADs the durable event stream after the persisted high-water mark
-    (default 0 = from the beginning) and handles every agent.wake envelope
-    through the same idempotent wake path, then persists the new mark. This
-    closes the subscribe gap: wakes published while this controller was down
-    are processed on the next scan (startup or CHECK_INTERVAL) instead of
-    being lost. Re-processing is safe because waking a running agent is a
-    no-op (idempotent wake path).
+    XREADs the durable event stream after the persisted high-water mark and
+    handles every agent.wake envelope through the same idempotent wake path,
+    then persists the new mark. This closes the subscribe gap: wakes
+    published while this controller was down are processed on the next scan
+    (startup or CHECK_INTERVAL) instead of being lost. Re-processing is safe
+    because waking a running agent is a no-op (idempotent wake path).
+
+    First-ever boot has no persisted mark; seed from the stream tail (a
+    concrete id, not "$") so the full stream history is not replayed and
+    reaper-stopped agents are not resurrected. A restart after downtime
+    resumes from the persisted mark and picks up exactly the wakes published
+    while we were down.
     """
-    last = bus.get_key(HWM_KEY) or "0"
+    last = bus.get_key(HWM_KEY)
+    if last is None:
+        last = bus.xrevrange_tail(EVENTS_STREAM) or "0-0"
+        bus.set_key(HWM_KEY, last)
     while True:
         entries = bus.xread(EVENTS_STREAM, last, count=100)
         if not entries:

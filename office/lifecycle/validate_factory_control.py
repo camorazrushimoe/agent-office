@@ -106,9 +106,12 @@ def test_seconds_idle() -> None:
 class FakeBus:
     """Deterministic stand-in for BusClient: memory key/value + canned XREAD."""
 
-    def __init__(self, hwm: str | None = None, pages: list[list[tuple[str, dict]]] | None = None):
+    def __init__(self, hwm: str | None = None,
+                 pages: list[list[tuple[str, dict]]] | None = None,
+                 tail: str | None = "999-0"):
         self._hwm = hwm
         self._pages = pages or []
+        self._tail = tail
         self.sets: list[tuple[str, str]] = []
 
     def get_key(self, key: str) -> str | None:
@@ -124,11 +127,21 @@ class FakeBus:
             return []
         return self._pages.pop(0)
 
+    def xrevrange_tail(self, key: str) -> str | None:
+        return self._tail
+
+
+def _make_wake_recorder(woken: list[str]):
+    """Return a wake() stand-in that records its targets (no lambdas)."""
+    def rec(target: str, _reg: list[dict]) -> None:
+        woken.append(target)
+    return rec
+
 
 def test_scan_wake_events() -> None:
     registry = [{"id": "dev-1-developer", "container": "dev-1-developer"}]
     woken: list[str] = []
-    fc.wake = lambda target, _reg: woken.append(target)   # noqa: E731
+    fc.wake = _make_wake_recorder(woken)
 
     # Two pages: one agent.wake + one unrelated event, then a second wake.
     bus = FakeBus(hwm=None, pages=[
@@ -136,7 +149,7 @@ def test_scan_wake_events() -> None:
          ("1680000000001-0", {"action": "agent.stopped", "target": "dev-1-developer"})],
         [("1680000000002-0", {"action": "agent.wake", "target": "lab-1-evaluation"})],
         [],
-    ])
+    ], tail="1680000000001-0")
     fc.scan_wake_events(bus, registry)
     check("re-scan wakes only agent.wake targets", woken,
           ["dev-1-developer", "lab-1-evaluation"])
@@ -152,10 +165,20 @@ def test_scan_wake_events() -> None:
         [],
     ])
     woken2: list[str] = []
-    fc.wake = lambda target, _reg: woken2.append(target)   # noqa: E731
+    fc.wake = _make_wake_recorder(woken2)
     fc.scan_wake_events(bus2, registry)
     check("re-scan from persisted HWM skips already-seen entries",
           woken2, ["lab-1-evaluation"])
+
+    # First boot with no HWM seeds from the stream tail, NOT "0": history is
+    # not replayed. Simulate an empty stream (no pages after the tail) and
+    # assert the seed is persisted without waking anything.
+    bus3 = FakeBus(hwm=None, pages=[], tail="999-0")
+    woken3: list[str] = []
+    fc.wake = _make_wake_recorder(woken3)
+    fc.scan_wake_events(bus3, registry)
+    check("first boot seeds HWM from stream tail, no replay", bus3._hwm, "999-0")
+    check("first boot does not wake history targets", woken3, [])
 
 
 def main() -> int:

@@ -18,8 +18,7 @@ Usage:
   python3 crew/crew-send.py architect "review foundation" --container
 
 Requires crew/agents.json (copy from agents.example.json).
-Stdlib only for the happy path; the wake path imports the office bus client
-from /opt/office-lib (or the repo-relative office/ dir).
+Stdlib only (the office bus client itself is stdlib-only RESP).
 """
 from __future__ import annotations
 
@@ -31,6 +30,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -80,7 +80,8 @@ def wake_target(cfg: dict) -> str:
 
 def health_url(delivery_url: str) -> str:
     """Health endpoint for a door URL (same host:port, /health path)."""
-    return delivery_url.replace("/webhooks/inbox", HEALTH_PATH)
+    u = urlparse(delivery_url)
+    return f"{u.scheme}://{u.netloc}{HEALTH_PATH}"
 
 
 def should_wake(exc: BaseException) -> bool:
@@ -108,7 +109,12 @@ def _post(url: str, payload: str, secret: str) -> tuple[int, str]:
 
 
 def wait_healthy(url: str, timeout_s: float, poll_s: float = 3.0) -> bool:
-    """Poll GET url until it returns 200 or the timeout expires."""
+    """Poll GET url until it returns 200 or the timeout expires.
+
+    Any response (or error) other than 200 means "not healthy yet" — keep
+    polling. A permanently wrong health URL (e.g. 404) times out like any
+    other unhealed door, which the caller turns into a non-zero exit.
+    """
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         try:
@@ -121,7 +127,7 @@ def wait_healthy(url: str, timeout_s: float, poll_s: float = 3.0) -> bool:
     return False
 
 
-def load_bus_client() -> tuple | None:
+def load_bus_client() -> tuple[type, Callable[..., int]] | None:
     """Import the office bus client from the standard mount locations.
 
     Prefers the repo-relative `office/` (fresh checkout = source of truth),
@@ -175,7 +181,7 @@ def send(agent: str, message: str, use_container: bool = False) -> tuple[int, st
         if not should_wake(e):
             raise
         # 5xx: door up but unhealthy — fall through to wake.
-    except Exception:
+    except (OSError, TimeoutError):
         # Connection refused / timeout / DNS — door down — wake.
         pass
 

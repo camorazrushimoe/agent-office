@@ -155,11 +155,69 @@ def test_redelivery_failure_after_wake() -> None:
           woken, ["dev-1-qa"])
 
 
+def test_canonical_client_rule() -> None:
+    """Composition spec: exactly one door client, no per-instance copies.
+
+    - no instances/*/crew/crew-send.py copies remain (lab-1 removed)
+    - every instance compose mounts the canonical file read-only at
+      /opt/crew/crew-send.py on every agent service
+    """
+    import hashlib
+
+    office_root = os.path.abspath(os.path.join(HERE, ".."))
+    canonical = os.path.join(HERE, "crew-send.py")
+    with open(canonical, "rb") as f:
+        sha = hashlib.sha256(f.read()).hexdigest()
+
+    instances = os.path.join(office_root, "instances")
+    copies = []
+    for inst in sorted(os.listdir(instances)):
+        crew_dir = os.path.join(instances, inst, "crew")
+        if not os.path.isdir(crew_dir):
+            continue
+        for name in sorted(os.listdir(crew_dir)):
+            if name == "crew-send.py":
+                p = os.path.join(crew_dir, name)
+                with open(p, "rb") as f:
+                    same = hashlib.sha256(f.read()).hexdigest() == sha
+                copies.append(f"{inst}/crew/{name} (sha256 match: {same})")
+    check("no per-instance crew-send.py copies remain", copies, [])
+
+    # every agent service in every instance compose mounts the canonical file
+    missing_mounts = []
+    for inst in sorted(os.listdir(instances)):
+        compose = os.path.join(instances, inst, "docker-compose.yml")
+        if not os.path.isfile(compose):
+            continue
+        with open(compose, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+        # split into service blocks under the top-level `services:` section:
+        # a 2-space-indented `  name:` line, followed by 6-space volume mounts
+        current = None
+        services = {}
+        in_services = False
+        for ln in lines:
+            if not in_services:
+                if ln.strip() == "services:":
+                    in_services = True
+                continue
+            if ln.startswith("  ") and not ln.startswith("   ") and ln.rstrip().endswith(":"):
+                current = ln.strip().rstrip(":")
+                services.setdefault(current, [])
+            elif ln.startswith("      - ") and current is not None:
+                services[current].append(ln.strip())
+        for svc, mounts in services.items():
+            if not any("crew-send.py:/opt/crew/crew-send.py:ro" in m for m in mounts):
+                missing_mounts.append(f"{inst}/{svc}")
+    check("every agent service mounts the canonical client", missing_mounts, [])
+
+
 def main() -> int:
     test_wake_target_derivation()
     test_wake_decision()
     test_health_url()
     test_redelivery_failure_after_wake()
+    test_canonical_client_rule()
     print()
     if FAILURES:
         print(f"FAILURES ({len(FAILURES)}): {FAILURES}")

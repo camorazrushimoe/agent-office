@@ -44,16 +44,40 @@ Responsibilities:
 
 It talks to the local Docker engine (docker.sock) for the containers it owns.
 
-### 2. Smart door client (`crew-send` and in-agent equivalent)
+### 2. Smart door client (`crew/crew-send.py`)
 
-Before delivering a message:
+**Canonical client rule:** there is exactly one door client — `crew/crew-send.py`
+at the Office repo root. Every instance mounts that file read-only into every
+agent container at `/opt/crew/crew-send.py` (alongside the per-instance
+`crew/` mount); instances do NOT ship their own copy. A missing client, or a
+per-instance copy that diverges from the canonical file, is a spec violation.
 
-1. Resolve target agent
-2. Check state / health
-3. If not healthy → request wake from the lifecycle controller (or via bus action `agent.wake`)
-4. Wait until healthy (with timeout, e.g. 60–90s)
-5. POST to the webhook door as today
-6. Update `last_active` for the target (and optionally for the sender)
+The client delivers a message to an agent's webhook door. Delivery is
+wake-aware (**sender-side wake contract**):
+
+1. **POST** the signed message to the door (container URL when `--container`
+   is used, host URL otherwise).
+2. **On door-down** (connection refused / timeout / 5xx) the client publishes
+   an `agent.wake` envelope for the target, durably (`publish_event` on
+   `office:events`) and on the live inbox channel (`office:inbox:<target>`).
+3. **Wait** up to the wake timeout (default **90s**, `WAKE_TIMEOUT_S`) for the
+   target door to answer `/health` with 200.
+4. **Re-deliver** the original message once the target is healthy.
+5. **Fail loudly** — exit non-zero — if the wake times out OR if the
+   re-delivery fails after a successful wake. The message is never silently
+   dropped.
+
+4xx responses (bad signature, unknown target, ...) are client errors and do
+**not** trigger a wake — restarting the container would not fix them.
+
+**Target derivation rule:** the `agent.wake` envelope target is the
+controller-recognized agent id — the **host of the target entry's
+`container_url`** in `crew/agents.json`. Per-instance registries are keyed by
+short role, so the `developer` entry in team `dev-1` (container URL
+`http://dev-1-developer:8644/webhooks/inbox`) yields target `dev-1-developer` —
+exactly the id/container factory-control registers (`{instance}-{role}`). An
+entry MAY carry an explicit `wake_hint`; if present it is used instead,
+normalized `team:role` → `team-role` (colon → hyphen).
 
 If wake fails → return a clear error; do not silently drop the message.
 
@@ -148,7 +172,7 @@ services:
 | Wake timeout | Fail the send with explicit error; caller can retry |
 | Double wake | Redis lock / idempotent start |
 | Stop during work | `busy` lock + only stop when idle and not busy |
-| Controller down | Agents that are already running keep running; new wakes fail closed until controller is back |
+| Controller down | Agents that are already running keep running; wakes published while the controller is down are picked up by the durable re-scan (XREAD `office:events` on startup + scan interval) and processed idempotently once it is back |
 | Docker sock permission | Same pattern already used by devops/developer images in dev-crew |
 | Storm of starts | Rate-limit wakes per agent; coalesce concurrent requests |
 

@@ -29,6 +29,7 @@ services:
       - ./skills/developer:/opt/data/skills/dev-crew:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -56,6 +57,7 @@ services:
       - ./skills/qa:/opt/data/skills/dev-crew:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -83,6 +85,7 @@ services:
       - ./skills/tech-pm:/opt/data/skills/dev-crew:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -110,6 +113,7 @@ services:
       - ./skills/devops:/opt/data/skills/dev-crew:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro

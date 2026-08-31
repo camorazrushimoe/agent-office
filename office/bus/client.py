@@ -176,6 +176,34 @@ class BusClient:
     def publish(self, channel: str, payload_json: str) -> int:
         return int(self.cmd("PUBLISH", channel, payload_json))
 
+    def xread(self, key: str, last_id: str, count: int = 100) -> list[tuple[str, dict]]:
+        """Non-blocking XREAD of a Redis stream after `last_id`.
+
+        Returns [(entry_id, fields_dict), ...] in stream order (oldest first),
+        newest last — ready for high-water-mark tracking. Empty when the
+        stream has no new entries.
+        """
+        reply = self.cmd("XREAD", "COUNT", str(count), "STREAMS", key, last_id)
+        out: list[tuple[str, dict]] = []
+        if not reply:
+            return out
+        # reply: [[stream_name, [[id, [f1, v1, ...]], ...]], ...]
+        for stream in reply:
+            if not isinstance(stream, list) or len(stream) < 2:
+                continue
+            entries = stream[1]
+            if not entries:
+                continue
+            for entry in entries:
+                if not isinstance(entry, list) or len(entry) < 2:
+                    continue
+                eid, flat = entry[0], entry[1]
+                fields: dict = {}
+                for i in range(0, len(flat) - 1, 2):
+                    fields[flat[i]] = flat[i + 1]
+                out.append((eid, fields))
+        return out
+
     def psubscribe(self, patterns: list[str]) -> Iterator[tuple[str, str]]:
         """Blocking generator yielding (pattern, channel, message)-style
         tuples (channel, message) matched via PSUBSCRIBE glob patterns."""
@@ -337,10 +365,11 @@ def publish_event(bus: BusClient, envelope: dict) -> int:
     return 1
 
 
-def send_wake(bus: BusClient, agent_id: str, reason: str = "") -> int:
+def send_wake(bus: BusClient, agent_id: str, reason: str = "",
+              actor: str = "lifecycle") -> int:
     """Publish an agent.wake request targeted at one agent."""
     env = make_envelope(
-        actor="lifecycle",
+        actor=actor,
         action="agent.wake",
         target=agent_id,
         payload={"reason": reason} if reason else None,

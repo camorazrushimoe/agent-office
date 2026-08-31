@@ -4,11 +4,16 @@
 Run:  python3 office/lifecycle/validate_factory_control.py
 Exit: 0 on success, 1 on any failed check.
 
-Covers the two lifecycle fixes folded into PR #26:
+Covers the lifecycle fixes folded into PR #26:
   - 2a: wake target normalization (colon-form 'team:role' -> registry id
     'team-role') and the agent.wake_ignored observability contract
   - 2b: idle reaper anchored to container start time (effective_idle), so a
     freshly started agent with stale pre-wake log lines is not reaped
+
+And the wake-path implementation (spec: add-door-client-wake-path):
+  - durable re-scan (scan_wake_events): XREAD office:events after the
+    persisted high-water mark, agent.wake envelopes handled through the same
+    idempotent wake path, HWM advanced and persisted, re-scan idempotent
 """
 from __future__ import annotations
 
@@ -98,10 +103,66 @@ def test_seconds_idle() -> None:
         Path(tempfile.gettempdir()) / "does-not-exist-agent.log"), None)
 
 
+class FakeBus:
+    """Deterministic stand-in for BusClient: memory key/value + canned XREAD."""
+
+    def __init__(self, hwm: str | None = None, pages: list[list[tuple[str, dict]]] | None = None):
+        self._hwm = hwm
+        self._pages = pages or []
+        self.sets: list[tuple[str, str]] = []
+
+    def get_key(self, key: str) -> str | None:
+        return self._hwm
+
+    def set_key(self, key: str, value: str) -> None:
+        self._hwm = value
+        self.sets.append((key, value))
+
+    def xread(self, key: str, last_id: str, count: int = 100) -> list[tuple[str, dict]]:
+        # Return the next page; caller advances the HWM after each page.
+        if not self._pages:
+            return []
+        return self._pages.pop(0)
+
+
+def test_scan_wake_events() -> None:
+    registry = [{"id": "dev-1-developer", "container": "dev-1-developer"}]
+    woken: list[str] = []
+    fc.wake = lambda target, _reg: woken.append(target)   # noqa: E731
+
+    # Two pages: one agent.wake + one unrelated event, then a second wake.
+    bus = FakeBus(hwm=None, pages=[
+        [("1680000000000-0", {"action": "agent.wake", "target": "dev-1-developer"}),
+         ("1680000000001-0", {"action": "agent.stopped", "target": "dev-1-developer"})],
+        [("1680000000002-0", {"action": "agent.wake", "target": "lab-1-evaluation"})],
+        [],
+    ])
+    fc.scan_wake_events(bus, registry)
+    check("re-scan wakes only agent.wake targets", woken,
+          ["dev-1-developer", "lab-1-evaluation"])
+    check("re-scan persists HWM after last read", bus._hwm, "1680000000002-0")
+    check("HWM key written to Redis state",
+          bus.sets[-1], (fc.HWM_KEY, "1680000000002-0"))
+
+    # Idempotency: a fresh controller starts from the persisted mark, so the
+    # same envelopes are NOT re-processed (wake path itself is also a no-op
+    # for running containers).
+    bus2 = FakeBus(hwm="1680000000001-0", pages=[
+        [("1680000000002-0", {"action": "agent.wake", "target": "lab-1-evaluation"})],
+        [],
+    ])
+    woken2: list[str] = []
+    fc.wake = lambda target, _reg: woken2.append(target)   # noqa: E731
+    fc.scan_wake_events(bus2, registry)
+    check("re-scan from persisted HWM skips already-seen entries",
+          woken2, ["lab-1-evaluation"])
+
+
 def main() -> int:
     test_normalize_target()
     test_effective_idle()
     test_seconds_idle()
+    test_scan_wake_events()
     print()
     if FAILURES:
         print(f"FAILURES ({len(FAILURES)}): {FAILURES}")

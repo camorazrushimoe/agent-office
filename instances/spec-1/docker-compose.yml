@@ -23,6 +23,7 @@ services:
       - ./home/technical-product-manager:/opt/data
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -50,6 +51,7 @@ services:
       - ./home/product-researcher:/opt/data
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -77,6 +79,7 @@ services:
       - ./home/system-domain-analyst:/opt/data
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -104,6 +107,7 @@ services:
       - ./home/adversarial-reviewer:/opt/data
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro

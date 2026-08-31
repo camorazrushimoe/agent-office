@@ -98,10 +98,154 @@ def test_seconds_idle() -> None:
         Path(tempfile.gettempdir()) / "does-not-exist-agent.log"), None)
 
 
+# ---- 3: durable re-scan of office:events for agent.wake -------------------
+
+class FakeBus:
+    """Records XREAD/get/set; returns queued XREAD results (then empty)."""
+
+    def __init__(self, xread_results=None, hwm: str = ""):
+        self.xread_results = list(xread_results or [])
+        self.hwm = hwm
+        self.sets: dict[str, str] = {}
+        self.cmds: list[tuple] = []
+
+    def get_key(self, key: str) -> str | None:
+        return self.hwm or None
+
+    def set_key(self, key: str, value: str) -> None:
+        self.sets[key] = value
+
+    def cmd(self, *args):
+        self.cmds.append(args)
+        if args and args[0] == "XREAD":
+            return self.xread_results.pop(0) if self.xread_results else []
+        return None
+
+
+def _xread_row(entry_id: str, action: str, target: str) -> list:
+    fields = ["action", action, "target", target]
+    return [entry_id, fields]
+
+
+def _registry_with_dev() -> list[dict]:
+    return [{
+        "id": "dev-1-developer",
+        "container": "dev-1-developer",
+        "log_path": "instances/dev-1/home/developer",
+    }]
+
+
+def test_parse_stream_entries() -> None:
+    raw = [
+        ["office:events", [
+            _xread_row("1-0", "agent.wake", "dev-1-developer"),
+            _xread_row("2-0", "agent.started", "dev-1-developer"),
+        ]]
+    ]
+    got = fc.parse_stream_entries(raw)
+    check("parse_stream_entries count", len(got), 2)
+    check("parse_stream_entries entry id", got[0][0], "1-0")
+    check("parse_stream_entries fields action", got[0][1]["action"],
+          "agent.wake")
+    check("parse_stream_entries fields target", got[0][1]["target"],
+          "dev-1-developer")
+    check("parse_stream_entries empty", fc.parse_stream_entries([]), [])
+    check("parse_stream_entries malformed row skipped",
+          fc.parse_stream_entries([["office:events", [["x"]]]]), [])
+
+
+def test_rescan_wakes() -> None:
+    emitted: list[tuple] = []
+    started: list[str] = []
+    fc.emit = lambda action, target, summary, extra=None: emitted.append(
+        (action, target, summary))
+
+    # 3a: wake envelope replayed -> target started, hwm advanced past all rows
+    bus = FakeBus(xread_results=[
+        [["office:events", [
+            _xread_row("1-0", "agent.wake", "dev-1-developer"),
+            _xread_row("2-0", "agent.started", "dev-1-developer"),
+        ]]],
+    ], hwm="0-0")
+    fc.running_containers = lambda: set()
+    fc.docker_start = lambda name: started.append(name) or (True, "door ready")
+    handled = fc.rescan_wakes(bus, _registry_with_dev())
+    check("rescan: handled only agent.wake envelopes", handled, 1)
+    check("rescan: started the woken target", started, ["dev-1-developer"])
+    check("rescan: emitted agent.started",
+          any(a == "agent.started" and t == "dev-1-developer"
+              for a, t, _ in emitted), True)
+    check("rescan: hwm persisted past last row",
+          bus.sets.get(fc.WAKE_HWM_KEY), "2-0")
+
+    # 3b: idempotent — already-running target is a no-op, hwm still advances
+    bus = FakeBus(xread_results=[
+        [["office:events", [
+            _xread_row("3-0", "agent.wake", "dev-1-developer"),
+        ]]],
+    ], hwm="2-0")
+    fc.running_containers = lambda: {"dev-1-developer"}
+    fc.docker_start = lambda name: started.append(name) or (True, "door ready")
+    handled = fc.rescan_wakes(bus, _registry_with_dev())
+    check("rescan: idempotent no-op count", handled, 1)
+    check("rescan: running target NOT restarted", started, ["dev-1-developer"])
+    check("rescan: hwm advanced on no-op",
+          bus.sets.get(fc.WAKE_HWM_KEY), "3-0")
+
+    # 3c: unknown target -> agent.wake_ignored emitted, no start
+    emitted.clear()
+    bus = FakeBus(xread_results=[
+        [["office:events", [
+            _xread_row("4-0", "agent.wake", "dev-1-develop"),  # wrong form
+        ]]],
+    ], hwm="3-0")
+    fc.running_containers = lambda: set()
+    fc.docker_start = lambda name: started.append(name) or (True, "door ready")
+    handled = fc.rescan_wakes(bus, _registry_with_dev())
+    check("rescan: unknown target still handled (ignored)", handled, 1)
+    check("rescan: unknown target not started",
+          started, ["dev-1-developer"])
+    check("rescan: agent.wake_ignored emitted",
+          any(a == "agent.wake_ignored" for a, _, _ in emitted), True)
+
+    # 3d: XREAD resumes after the persisted hwm
+    bus = FakeBus(xread_results=[
+        [["office:events", [
+            _xread_row("9-0", "agent.wake", "dev-1-developer"),
+        ]]],
+    ], hwm="7-0")
+    fc.running_containers = lambda: {"dev-1-developer"}
+    fc.docker_start = lambda name: started.append(name) or (True, "door ready")
+    fc.rescan_wakes(bus, _registry_with_dev())
+    xreads = [c for c in bus.cmds if c[0] == "XREAD"]
+    check_true("rescan: XREAD uses persisted hwm as lower bound",
+               bool(xreads) and xreads[0][-1] == "7-0")
+
+    # 3e: bus down -> no crash, no hwm move (retried next scan)
+    class DownBus(FakeBus):
+        def cmd(self, *args):
+            self.cmds.append(args)
+            raise RuntimeError("connection closed")
+
+    down = DownBus(hwm="9-0")
+    handled = fc.rescan_wakes(down, _registry_with_dev())
+    check("rescan: XREAD failure returns 0 handled", handled, 0)
+    check("rescan: XREAD failure leaves hwm unchanged",
+          down.sets.get(fc.WAKE_HWM_KEY), None)
+
+
+def check_true(name: str, cond: bool) -> None:
+    print(f"{'PASS' if cond else 'FAIL'}  {name}")
+    if not cond:
+        FAILURES.append(name)
+
+
 def main() -> int:
     test_normalize_target()
     test_effective_idle()
     test_seconds_idle()
+    test_parse_stream_entries()
+    test_rescan_wakes()
     print()
     if FAILURES:
         print(f"FAILURES ({len(FAILURES)}): {FAILURES}")

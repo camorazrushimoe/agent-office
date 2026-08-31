@@ -11,6 +11,10 @@ Loops:
      signal is unreadable; busy-locked agents are never stopped.
   2. Wake listener: office:inbox:* envelopes with action=agent.wake start
      the target container (idempotent), wait for health, emit events.
+  3. Durable wake re-scan (startup + each CHECK_INTERVAL): XREAD
+     office:events after the persisted high-water mark for agent.wake, so
+     wakes published while the controller was down are re-processed
+     (idempotent) instead of lost.
 
 Events go through the durable publish path (bus.client.publish_event).
 """
@@ -35,10 +39,18 @@ WAKE_TIMEOUT_S = int(os.environ.get("WAKE_TIMEOUT_S", "90"))
 DOOR_PORT = int(os.environ.get("DOOR_PORT", "8644"))
 
 sys.path.insert(0, "/opt/office-lib")
-from bus.client import BusClient, make_envelope, publish_event  # noqa: E402
+from bus.client import EVENTS_STREAM, BusClient, make_envelope, publish_event  # noqa: E402
 
 ACTIVITY_MARKS = ("conversation_loop:", "tool_executor:", "inbound message",
                   "response ready:")
+
+# Durable wake re-scan: XREAD office:events after a persisted high-water mark
+# so wakes published while we were down are re-processed (idempotent) instead
+# of lost. The hwm lives in Redis so the stateless container resumes exactly
+# where it stopped across restarts.
+WAKE_HWM_KEY = "office:state:factory-control:wake-hwm"
+SCAN_BATCH = 100
+SCAN_MAX_ENTRIES = 1000
 
 
 def sh(cmd: list[str], timeout: int | None = None) -> tuple[int, str]:
@@ -269,7 +281,8 @@ def wake(target: str, registry: list[dict]) -> None:
 def listen_wakes(registry: list[dict]) -> None:
     """PSUBSCRIBE office:inbox:*; reconnect quietly on socket timeouts.
 
-    Known trade-off (spec'd): envelopes published while we are down are lost.
+    Live wakes. Wakes published while we are down are recovered by the
+    durable re-scan (rescan_wakes) on startup and each scan interval.
     """
     while True:
         try:
@@ -285,17 +298,90 @@ def listen_wakes(registry: list[dict]) -> None:
             time.sleep(2)
 
 
+# ---- durable wake re-scan -------------------------------------------------
+
+def parse_stream_entries(result) -> list[tuple[str, dict]]:
+    """Parse the nested RESP result of XREAD into [(entry_id, fields)]."""
+    entries: list[tuple[str, dict]] = []
+    for stream in result or []:
+        if not isinstance(stream, list) or len(stream) < 2:
+            continue
+        for row in stream[1] or []:
+            if not isinstance(row, list) or len(row) < 2:
+                continue
+            flat = row[1] or []
+            fields = {flat[i]: flat[i + 1]
+                      for i in range(0, len(flat) - 1, 2)}
+            entries.append((row[0], fields))
+    return entries
+
+
+def _read_hwm(bus: BusClient) -> str:
+    try:
+        return bus.get_key(WAKE_HWM_KEY) or "0-0"
+    except Exception as exc:
+        log(f"hwm read failed, starting from 0-0: {exc}")
+        return "0-0"
+
+
+def _write_hwm(bus: BusClient, entry_id: str) -> None:
+    try:
+        bus.set_key(WAKE_HWM_KEY, entry_id)
+    except Exception as exc:
+        log(f"hwm persist failed ({entry_id}): {exc}")
+
+
+def rescan_wakes(bus: BusClient, registry: list[dict]) -> int:
+    """Replay agent.wake envelopes from office:events after the persisted
+    high-water mark, through the same idempotent wake path.
+
+    Returns the number of wake envelopes handled. Never raises for bus or
+    parse failures: a failed scan is logged and the hwm is left unchanged so
+    the wakes are retried next scan. Reprocessing is safe because wake() is
+    idempotent — waking an already-running agent is a no-op.
+    """
+    last_id = _read_hwm(bus)
+    handled = 0
+    for _ in range(SCAN_MAX_ENTRIES // SCAN_BATCH):
+        try:
+            raw = bus.cmd("XREAD", "COUNT", str(SCAN_BATCH), "STREAMS",
+                          EVENTS_STREAM, last_id)
+        except Exception as exc:
+            log(f"rescan XREAD failed (hwm={last_id}): {exc}")
+            return handled
+        entries = parse_stream_entries(raw)
+        if not entries:
+            return handled
+        for entry_id, fields in entries:
+            if fields.get("action") == "agent.wake":
+                wake(fields.get("target") or "", registry)
+                handled += 1
+            last_id = entry_id
+        _write_hwm(bus, last_id)
+        if len(entries) < SCAN_BATCH:
+            return handled
+    return handled
+
+
 def main() -> int:
     registry = load_registry()
     bus = BusClient()
     log(f"online: agents={len(registry)} idle={IDLE_TIMEOUT_S}s "
         f"interval={CHECK_INTERVAL}s wake={WAKE_TIMEOUT_S}s")
     threading.Thread(target=listen_wakes, args=(registry,), daemon=True).start()
+    try:
+        rescan_wakes(bus, registry)
+    except Exception as exc:
+        log(f"startup rescan error: {exc}")
     while True:
         try:
             reap_once(registry, bus)
         except Exception as exc:
             log(f"reap error: {exc}")
+        try:
+            rescan_wakes(bus, registry)
+        except Exception as exc:
+            log(f"rescan error: {exc}")
         time.sleep(CHECK_INTERVAL)
 
 

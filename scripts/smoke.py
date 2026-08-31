@@ -282,6 +282,30 @@ def level0_static() -> None:
     else:
         ok("crew/agents.json absent (doors level will fail until copied from example)")
 
+    # Canonical client rule (composition spec): instances SHALL NOT ship their
+    # own crew-send.py copy — the client arrives by the read-only mount. Any
+    # leftover copy must be byte-identical (SHA-256) to the canonical file.
+    canonical_path = ROOT / "crew" / "crew-send.py"
+    canonical_sha = hashlib.sha256(
+        canonical_path.read_bytes()).hexdigest()
+    copies = sorted((ROOT / "instances").glob("*/crew/crew-send.py"))
+    divergent = [
+        p for p in copies
+        if hashlib.sha256(p.read_bytes()).hexdigest() != canonical_sha
+    ]
+    if divergent:
+        fail(
+            "per-instance crew-send.py diverges from the canonical client "
+            f"(remove the copy or re-sync): {', '.join(str(p.relative_to(ROOT)) for p in divergent)}"
+        )
+    if copies:
+        log(
+            "warning: per-instance crew-send.py copies still present "
+            "(byte-identical, but the canonical mount is the contract): "
+            + ", ".join(str(p.relative_to(ROOT)) for p in copies)
+        )
+    ok(f"canonical client rule: no divergent copies ({len(copies)} found, SHA-256 checked)")
+
 
 def level1_infra(bus_url: str) -> RedisLite:
     log("level 1 — infra")

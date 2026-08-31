@@ -24,6 +24,7 @@ services:
       - ./skills/research-lead:/opt/data/skills/lab-crew:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -51,6 +52,7 @@ services:
       - ./skills/research-engineer:/opt/data/skills/lab-crew:ro
       - ./workspace:/workspace
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro
@@ -78,6 +80,7 @@ services:
       - ./skills/evaluation:/opt/data/skills/lab-crew:ro
       - ./workspace:/workspace:ro
       - ./crew:/opt/crew:ro
+      - ../../crew/crew-send.py:/opt/crew/crew-send.py:ro
       - ../../office:/opt/office-lib:ro
       - ../../tokens:/opt/tokens:ro
       - ../../docs:/opt/docs:ro

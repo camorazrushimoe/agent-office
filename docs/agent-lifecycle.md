@@ -40,22 +40,49 @@ Responsibilities:
 - **Stop** agents that exceeded `IDLE_TIMEOUT` (default **40 minutes**) and have no active task
 - **Start** agents on wake request
 - Wait for health before reporting success
+- **Re-scan the durable event stream** (`office:events`) for `agent.wake` on
+  startup and each scan interval, after a persisted high-water mark, so wakes
+  published while the controller was down are re-processed (idempotently)
+  rather than lost
 - Publish bus events: `agent.started`, `agent.stopped`, `agent.wake_failed`, `agent.wake_ignored`
 
 It talks to the local Docker engine (docker.sock) for the containers it owns.
 
-### 2. Smart door client (`crew-send` and in-agent equivalent)
+### 2. Canonical door client (`crew/crew-send.py`)
 
-Before delivering a message:
+There is **one** door client: `crew/crew-send.py` at the Office repo root. It is
+delivered to every agent container as a read-only mount at
+`/opt/crew/crew-send.py` (alongside the per-instance `crew/` mount containing
+`FACTORY-STANDARD.md` + `agents.json`). Instances do not ship copies; a missing
+or divergent client is a spec violation (SHA-256 checked at
+instantiation/sync). The client implements the sender side of the wake
+contract, so every send is wake-aware:
 
-1. Resolve target agent
-2. Check state / health
-3. If not healthy → request wake from the lifecycle controller (or via bus action `agent.wake`)
-4. Wait until healthy (with timeout, e.g. 60–90s)
-5. POST to the webhook door as today
-6. Update `last_active` for the target (and optionally for the sender)
+1. Resolve target agent in `crew/agents.json`
+2. POST to the target door as today
+3. If the door is **down** (connection refused, timeout, or 5xx) → **wake**:
+   a. Publish `agent.wake` for the controller-recognized target id — durably
+      (`publish_event` → `office:events`) and on the live inbox channel
+      (`office:inbox:<target>`)
+   b. Wait for the target door's `/health` to answer 200 (up to `WAKE_TIMEOUT_S`,
+      default **90s**)
+   c. Re-deliver the original message
+4. **4xx answers never wake** — the door is up and rejected the message; waking
+   cannot help
+5. If the wake or the re-delivery fails → exit non-zero with a clear error
+   naming the target; **the message is never silently dropped**
 
-If wake fails → return a clear error; do not silently drop the message.
+**Target derivation.** The wake envelope target is the controller-recognized
+agent id: the **host of the entry's `container_url`** in `crew/agents.json`.
+Per-instance registries are keyed by short role, so the `developer` entry in
+team `dev-1` yields `dev-1-developer` — exactly the id/container
+factory-control registers (`{instance}-{role}`). An entry MAY carry an
+explicit `wake_hint`; if present it is used instead, normalized
+`team:role` → `team-role` (colon → hyphen).
+
+The lifecycle controller subscribes to `office:inbox:*` and handles
+`agent.wake` by starting the target (idempotent — waking an already-running
+agent is a no-op) and verifying health before treating it as ready.
 
 ### 3. Activity signals
 
@@ -81,10 +108,11 @@ Lifecycle controller → docker stop developer → agent.stopped on bus
 
 ```text
 QA wants to send work to Developer
-  → crew-send / internal client checks Developer health
-  → not healthy → agent.wake (Developer)
+  → crew-send POSTs to Developer door → connection refused (Developer stopped)
+  → crew-send publishes agent.wake target=dev-1-developer (durable + inbox)
   → lifecycle controller: docker start → wait health
   → agent.started on bus
+  → crew-send waits Developer /health → 200
   → original message POSTed to Developer door
   → last_active(Developer) updated
 ```
@@ -148,7 +176,7 @@ services:
 | Wake timeout | Fail the send with explicit error; caller can retry |
 | Double wake | Redis lock / idempotent start |
 | Stop during work | `busy` lock + only stop when idle and not busy |
-| Controller down | Agents that are already running keep running; new wakes fail closed until controller is back |
+| Controller down | Agents that are already running keep running; wakes published while down are re-processed from `office:events` on restart (durable re-scan, idempotent) |
 | Docker sock permission | Same pattern already used by devops/developer images in dev-crew |
 | Storm of starts | Rate-limit wakes per agent; coalesce concurrent requests |
 

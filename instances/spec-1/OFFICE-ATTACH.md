@@ -18,7 +18,7 @@ instances/spec-1/
 | Template contract item | Implementation |
 |---|---|
 | External Office Redis | `OFFICE_BUS_URL=redis://shared-memory:6379` on the `agent-office-crew` external network; no local Redis service |
-| Wake-aware send | `crew-send.py --wake` → publishes `agent.wake`, waits health, then POSTs |
+| Wake-aware send | canonical `crew-send.py` (mounted read-only at `/opt/crew/crew-send.py`) wakes automatically: on a down door (refused/timeout/5xx) it publishes `agent.wake`, waits `/health` (≤90s), then re-delivers; 4xx never wakes |
 | Lifecycle controller | Office's always-on `factory-control` service (office/lifecycle/factory_control.py) |
 | Agents controller-managed | `restart: "no"` on all agent services |
 | Team-qualified actors | envelopes use actor `spec-1/<role>` when `TEAM_NAME` is set |

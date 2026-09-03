@@ -6,6 +6,28 @@ Agent Office is a higher-level factory that orchestrates specialized agent teams
 It does not build products itself. It decides *where* work happens, keeps the
 portfolio coherent, and makes the whole system observable.
 
+This is a personal working model of how agent work can be organized — not a
+claim that it is the only way. The rest of this README is the concrete shape
+of that model.
+
+**How you talk to it.** You do not sit inside the factory loop. You work with a
+separate Hermes / Grok agent: that is where specs are written and argued over.
+Then you hand the result to the factory — “new spec → Dev crew”, “experiment
+design → Lab crew”, and so on. The factory is for execution. Hermes is for
+thinking with you first.
+
+**Why GitHub and Linear are mandatory.** Agent loops are still unstable. They
+can die mid-task: context window, crash, idle-stop, a bad tool call. When that
+happens, the only context left is whatever was written *outside* the model.
+GitHub holds the specification and the code (issues, the repo, PRs, review).
+Linear holds the work (projects, tickets, status). The factory’s hard rules
+follow from that:
+
+- no spec in → no work (a GitHub issue, a repo with a spec, or a spec from Hermes);
+- the spec is always broken down into Linear tickets;
+- factory agents open pull requests and log the work in Linear;
+- Linear must not lie about state, because that is how you find the work after a loop dies.
+
 **Multi-repo system:** this repository is the **shell**. Team factories live in
 separate template repos and are instantiated as many times as you need:
 
@@ -23,10 +45,10 @@ separate template repos and are instantiated as many times as you need:
   Idea / GitHub repo
         │
         ▼
-   ┌─────────────┐     Research       ┌─────────────────┐     Product        ┌────────────┐
+   ┌─────────────┐     Research       ┌────────────────┐     Product        ┌───────────┐
    │  Lab team   │ ──── Package ────▶ │  Spec team        │ ──── Spec ───────▶ │  Dev team   │
    │ (lab-crew)  │                    │ (product-factory) │                    │ (dev-crew)  │
-   └─────────────┘                    └─────────────────┘                    └──────┘
+   └─────────────┘                    └────────────────┘                    └──────┘
                                                                                     │ PR → review → merge → deploy
                                                                                     ▼
                                                                            shared pre-prod (Super DevOps)
@@ -90,11 +112,11 @@ Full path: [docs/deploy.md](docs/deploy.md).
 You (via external Hermes/Grok agent + Office MCP)
         │
         ▼
-┌────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────┐
 │                     Agent Office                            │
 │  Architect · Staff Engineer · Scrum Master · Super DevOps   │
 │  · shared Redis bus · Office MCP · shared pre-prod          │
-└────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────┘
         │
         ├── Lab instances   (lab-crew template)       → research
         ├── Spec instances  (product-factory template) → product specs
